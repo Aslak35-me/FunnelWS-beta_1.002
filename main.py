@@ -1,6 +1,8 @@
 import argparse
 import os
 import subprocess
+import sys
+from colorama import Fore, Style
 
 SETTINGS_FILE = "config/setting.py"
 
@@ -92,7 +94,6 @@ def target(target_value):
 
     print(f"[+] TARGET güncellendi: {target_value}")
 
-
 def target_input(file_path):
     updated_lines = []
     found = False
@@ -103,7 +104,6 @@ def target_input(file_path):
         print(f"[!] Lütfen hatayı düzeltin ve tekrar deneyin")
         return
 
-    # settings.py dosyasını oku
     with open(SETTINGS_FILE, "r") as f:
         for line in f:
             if line.startswith("TARGET_FILE_PATH"):
@@ -112,11 +112,9 @@ def target_input(file_path):
             else:
                 updated_lines.append(line)
 
-    # Eğer TARGET_FILE_PATH yoksa ekle
     if not found:
         updated_lines.append(f'TARGET_FILE_PATH = "{file_path}"\n')
 
-    # Dosyayı güncelle
     with open(SETTINGS_FILE, "w") as f:
         f.writelines(updated_lines)
 
@@ -141,7 +139,6 @@ def level(lv):
         print("[!] Seviye bir sayı olmalıdır.")
         return
 
-    # settings.py dosyasını oku ve LEVEL satırını bulup değiştir
     with open(SETTINGS_FILE, "r") as f:
         for line in f:
             if line.startswith("LEVEL"):
@@ -150,11 +147,9 @@ def level(lv):
             else:
                 updated_lines.append(line)
 
-    # Eğer LEVEL satırı yoksa ekle
     if not found:
         updated_lines.append(f"LEVEL = {lv}\n")
 
-    # Dosyayı güncelle
     with open(SETTINGS_FILE, "w") as f:
         f.writelines(updated_lines)
 
@@ -187,10 +182,8 @@ def set_fast_scan_mode(is_enabled):
 
     print(f"[+] FAST_SCAN ayarlandı: {mode}")
 
-
 def run_fast_scan():
     print("[*] Hızlı tarama seçeneği seçildi!")
-
 
 def full_scan(is_enabled):
     mode = "on" if is_enabled else "off"
@@ -221,7 +214,6 @@ def dork_search(dork):
     updated_lines = []
     found = False
 
-    # settings.py dosyasını oku
     with open(SETTINGS_FILE, "r") as f:
         for line in f:
             if line.startswith("DORK") and not found:
@@ -229,13 +221,10 @@ def dork_search(dork):
                 found = True
             elif not line.startswith("DORK"):
                 updated_lines.append(line)
-            # Eğer DORK satırı bulunmuşsa ve yeni bir DORK satırı daha gelirse onu atlıyoruz
 
-    # Eğer hiç DORK bulunmadıysa dosya sonuna ekle
     if not found:
         updated_lines.append(f'DORK = "{dork}"\n')
 
-    # Dosyayı güncelle
     with open(SETTINGS_FILE, "w") as f:
         f.writelines(updated_lines)
 
@@ -249,7 +238,6 @@ def dork_input(dork_file):
         print(f"[!] Lütfen hatayı düzeltin ve tekrar deneyin")
         return
 
-    # settings.py dosyasını oku
     with open(SETTINGS_FILE, "r") as f:
         for line in f:
             if line.startswith("DORK_INPUT_FILE"):
@@ -258,25 +246,21 @@ def dork_input(dork_file):
             else:
                 updated_lines.append(line)
 
-    # Eğer TARGET_FILE_PATH yoksa ekle
     if not found:
         updated_lines.append(f'DORK_INPUT_FILE = "{dork_file}"\n')
 
-    # Dosyayı güncelle
     with open(SETTINGS_FILE, "w") as f:
         f.writelines(updated_lines)
 
     print(f"[+] TARGET_FILE_PATH update edildi : {dork_file}")
     print(f"[+] File name: {file_name}")
 
-# Açık türleri ###daha sonra ayarlancak
-def scan_sqli():###daha sonra ayarlancak
+def scan_sqli():
     print("[*] SQLi taraması başlatıldı...")
 
-def scan_xxs():###daha sonra ayarlancak
+def scan_xxs():
     print("[*] XXS taraması başlatıldı...")
 
-# Tool çağrıları
 def use_sqlmap(is_enabled):
     updated_lines = []
     mode = "on" if is_enabled else "off"
@@ -296,7 +280,6 @@ def use_sqlmap(is_enabled):
         f.writelines(updated_lines)
 
     print(f"[+] SQLMAP modu güncellendi: {mode}")
-
 
 def run_use_sqlmap():
     print("[*] sqlmap aracı kullanılacak !")
@@ -421,7 +404,6 @@ def use_metasploit(is_enabled):
 def run_use_metasploit():
     print("[*] METASPLOİT aracı kullanılacak !")
 
-# Raporlama
 def report(report_type):
     print(f"[*] Rapor tipi: {report_type}")
     updated_lines = []
@@ -447,8 +429,7 @@ def report(report_type):
 
     print(f"[+] Rapor tipi ayarlandı: {report_type}")
 
-def use_tor(): ###daha sonra ayarlancak
-    
+def use_tor():
     print_error_and_exit("[*] Tor şuanlık kullanılamıyor... \n [*] lütfen TOR parametresini kullanmayınız!")
 
 def use_random_agent():
@@ -488,12 +469,12 @@ def print_error_and_exit(message):
 def start():
     banner()
     print("[*]\t starter başlatılıyor")
-    subprocess.run(["python3", "starter.py"])  # starter.py dosyasını başlatıyoruz.
-
+    subprocess.run(["python3", "starter.py"])
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="FunnelWS - Web Vulnerability Scanner", add_help=False)
 
+    # Tüm argüman tanımları
     parser.add_argument("--target", "--t", help="Hedef domain/IP", dest="target")
     parser.add_argument("--target-input", "--t-input", help="Hedef listesini içeren dosya", dest="target_input")
     
@@ -504,11 +485,9 @@ if __name__ == "__main__":
     parser.add_argument("--dork", help="Dork ile site arama")
     parser.add_argument("--dork-input", help="Dork listesini içeren dosya")
 
-    # Açık taramaları
     parser.add_argument("--sqli", action="store_true", help="SQLi açığı taraması")
     parser.add_argument("--xxs", action="store_true", help="XXS açığı taraması")
 
-    # Araçlar
     parser.add_argument("--sqlmap", "--tool-sqlmap", action="store_true", help="SQLMap kullan")
     parser.add_argument("--nmap", "--tool-nmap", action="store_true", help="Nmap kullan")
     parser.add_argument("--wpscan", "--tool-wpscan", action="store_true", help="WPScan kullan")
@@ -516,20 +495,17 @@ if __name__ == "__main__":
     parser.add_argument("--zaproxy", "--tool-zaproxy", action="store_true", help="Zaproxy kullan")
     parser.add_argument("--metasploit", "--tool-metasploit", action="store_true", help="Metasploit kullan")
 
-    # Raporlama
     parser.add_argument("--report", choices=["json", "html", "pdf"], help="Rapor formatı")
     parser.add_argument("--report-html", action="store_true", help="HTML raporu")
     parser.add_argument("--report-json", action="store_true", help="JSON raporu")
     parser.add_argument("--report-pdf", action="store_true", help="PDF raporu")
 
-    # diğer
     parser.add_argument("--banner", action="store_true", help="Banner göster")
     parser.add_argument("--version", "--v", action="store_true", help="Sürüm bilgisi")
     parser.add_argument("--help", "--h", action="store_true", help="Yardım menüsü")
     parser.add_argument("--tor", action="store_true", help="Tor üzerinden tarama")
     parser.add_argument("--user-agent", "--random-agent", action="store_true", help="user agent ile taramalar yapar")
 
-    ##ayarlanmadılar!!
     parser.add_argument("--threads", type=int, default=5, help="İş parçacığı (thread) sayısı (varsayılan: 5)")
     parser.add_argument("--timeout", type=int, default=10, help="İstek zaman aşımı (saniye) (varsayılan: 10)")
     parser.add_argument("--verbose", action="store_true", help="Detaylı çıktı ver")
@@ -537,6 +513,25 @@ if __name__ == "__main__":
     parser.add_argument("--start", action="store_true", help="ana başlatıcı/starter")
 
     args = parser.parse_args()
+
+    # Önce tüm ayarları "off" olarak başlat
+    default_settings = {
+        "FAST_SCAN": "off",
+        "FULL_SCAN": "off",
+        "SQLMAP": "off",
+        "NMAP": "off",
+        "WPSCAN": "off",
+        "NIKTO": "off",
+        "ZAPROXY": "off",
+        "METASPLOIT": "off",
+        "RANDOM_AGENT": "off"
+    }
+
+    # Eğer ayar dosyası yoksa, varsayılan ayarlarla oluştur
+    if not os.path.exists(SETTINGS_FILE):
+        with open(SETTINGS_FILE, "w") as f:
+            for key, value in default_settings.items():
+                f.write(f'{key} = "{value}"\n')
 
     # Argümanlara göre fonksiyonları çalıştır
     if args.banner:
@@ -554,10 +549,10 @@ if __name__ == "__main__":
         level(args.level)
     if args.fast:
         run_fast_scan()
-        set_fast_scan_mode(args.fast)
+        set_fast_scan_mode(True)  # "on" olarak ayarla
     if args.full:
         run_full_scan()
-        full_scan(args.full)
+        full_scan(True)  # "on" olarak ayarla
     if args.dork:
         dork_search(args.dork)
     if args.dork_input:
@@ -568,22 +563,22 @@ if __name__ == "__main__":
         scan_xxs()
     if args.sqlmap:
         run_use_sqlmap()
-        use_sqlmap(args.sqlmap)
+        use_sqlmap(True)  # "on" olarak ayarla
     if args.nmap:
         run_use_nmap()
-        use_nmap(args.nmap)
+        use_nmap(True)  # "on" olarak ayarla
     if args.wpscan:
         run_use_wpscan()
-        use_wpscan(args.wpscan)
+        use_wpscan(True)  # "on" olarak ayarla
     if args.nikto:
         run_use_nikto()
-        use_nikto(args.nikto)
+        use_nikto(True)  # "on" olarak ayarla
     if args.zaproxy:
         run_use_zaproxy()
-        use_zaproxy(args.zaproxy)
+        use_zaproxy(True)  # "on" olarak ayarla
     if args.metasploit:
         run_use_metasploit()
-        use_metasploit(args.metasploit)
+        use_metasploit(True)  # "on" olarak ayarla
     if args.report:
         report(args.report)
     if args.report_html:
@@ -594,7 +589,6 @@ if __name__ == "__main__":
         report("pdf")
     if args.user_agent:
         use_random_agent()
-        set_random_agent_mode(args.user_agent)
-
+        set_random_agent_mode(True)  # "on" olarak ayarla
     if args.start:
         start()
