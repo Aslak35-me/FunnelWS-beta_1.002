@@ -14,6 +14,9 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.service import Service
 from webdriver_manager.chrome import ChromeDriverManager
 
+subprocess.run(["python3", "starter.py"])
+
+
 # colorama başlat
 init(autoreset=True)
 
@@ -183,6 +186,9 @@ def run_dork_scan():
     driver.quit()
     # Tarayıcı başlatma
     driver = start_browser()
+
+def run_panelfinder():### daha yapılmadı
+    print(" panel finder çalıştırıldı")
 
 def run_sqlmap():
     print(f"{Fore.CYAN}[+] SQLMAP taraması başlatılıyor...{Style.RESET_ALL}")

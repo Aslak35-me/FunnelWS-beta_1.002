@@ -448,9 +448,7 @@ def report(report_type):
     print(f"[+] Rapor tipi ayarlandı: {report_type}")
 
 def use_tor(): ###daha sonra ayarlancak
-
-    print("[*] Tor şuanlık kullanılamıyor...")
-    print("[*] lütfen TOR parametresini kullanmayınız!")
+    
     print_error_and_exit("[*] Tor şuanlık kullanılamıyor... \n [*] lütfen TOR parametresini kullanmayınız!")
 
 def use_random_agent():
@@ -490,7 +488,8 @@ def print_error_and_exit(message):
 def start():
     banner()
     print("[*]\t starter başlatılıyor")
-    subprocess.run(["python", "starter.py"])
+    subprocess.run(["python3", "starter.py"])  # starter.py dosyasını başlatıyoruz.
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="FunnelWS - Web Vulnerability Scanner", add_help=False)

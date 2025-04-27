@@ -34,7 +34,7 @@ if [[ "$platform" == "Linux" ]]; then
     mkdir -p exploit-database/logs
 
     echo -e "${GREEN}Kurulum tamamlandı!${RESET}"
-    echo -e "Çalıştırmak için: ${CYAN}python3 menu.py${RESET}"
+    echo -e "Çalıştırmak için: ${CYAN}python3 main.py${RESET}"
 
 elif [[ "$platform" == "Darwin" ]]; then
     # macOS İçin İşlemler
@@ -64,7 +64,7 @@ elif [[ "$platform" == "Darwin" ]]; then
     mkdir -p exploit-database/logs
 
     echo -e "${GREEN}Kurulum tamamlandı!${RESET}"
-    echo -e "Çalıştırmak için: ${CYAN}python3 menu.py${RESET}"
+    echo -e "Çalıştırmak için: ${CYAN}python3 main.py${RESET}"
 
 else
     echo -e "${RED}Bu platform desteklenmiyor.${RESET}"
