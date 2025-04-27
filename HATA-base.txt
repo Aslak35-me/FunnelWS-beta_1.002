@@ -1,0 +1,8 @@
+HATA-base
+
+içerisinide hataların tümü bulunur. 
+
+======================================================
+
+parametre(1) : parametrelerin keşismesinden dolayı doğan hatadır. : parametreleri kontrol ederek bu hatayı çözebilirsiniz.
+
