@@ -449,7 +449,9 @@ def report(report_type):
 
 def use_tor(): ###daha sonra ayarlancak
 
-    print("[*] Tor üzerinden gizli tarama başlatıldı...")
+    print("[*] Tor şuanlık kullanılamıyor...")
+    print("[*] lütfen TOR parametresini kullanmayınız!")
+    print_error_and_exit("[*] Tor şuanlık kullanılamıyor... \n [*] lütfen TOR parametresini kullanmayınız!")
 
 def use_random_agent():
     print("[+] random agent kullanılıcak")
@@ -479,6 +481,11 @@ def set_random_agent_mode(is_enabled):
         f.writelines(updated_lines)
 
     print(f"[+] RANDOM_AGENT ayarlanırken bir sorun çıkmadı mod :  {mode}")
+
+def print_error_and_exit(message):
+    print(f"{Fore.RED}HATA: {message}{Style.RESET_ALL}")
+    input(f"{Fore.RED}HATA nedeniyle işlem sonlandırıldı. Programı kapatıp tekrar açınız.{Style.RESET_ALL}")
+    sys.exit(1)
 
 def start():
     banner()
