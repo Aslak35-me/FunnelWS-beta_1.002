@@ -7,14 +7,13 @@ import time
 import colorama
 import selenium
 import threading
+from colorama import init
 from colorama import Fore, Style
 from selenium import webdriver
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.service import Service
 from webdriver_manager.chrome import ChromeDriverManager
-
-subprocess.run(["python3", "starter.py"])
 
 
 # colorama başlat
