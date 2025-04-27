@@ -320,7 +320,7 @@ def run_full_scan():
         thread.join()
     
 def işlem_sıralama():
-    if setting.DORK.lower() == "on"
+    if setting.DORK.lower() == "on":
         # Zamanlayıcı ekle
         time_tracker("Dork Tarama", 120)  # 120 saniyelik örnek süre
         run_dork_scan()
