@@ -6,6 +6,7 @@ import random
 import time
 import colorama
 import selenium
+import threading
 from colorama import Fore, Style
 from selenium import webdriver
 from selenium.webdriver.common.keys import Keys
@@ -21,11 +22,11 @@ sys.path.append(os.path.join(os.path.dirname(__file__), 'config'))
 
 import config.setting as setting
 import useragent
+from useragent import get_random_useragent
 
 def clear_console():
         current_os = platform.system()
         os.system('cls' if current_os == "Windows" else 'clear')
-
 
 def banner():
     print(r"""
@@ -132,6 +133,20 @@ def save_results_to_file(results, filename="scan_results/dork_result.txt"):
             f.write(f"{result}\n")
     print(f"{Fore.GREEN}[+] Sonuçlar {filename} dosyasına kaydedildi.{Style.RESET_ALL}")
 
+def time_tracker(task_name, duration_in_seconds):
+    # Zamanlayıcı başlatılır
+    start_time = time.time()
+    end_time = start_time + duration_in_seconds
+
+    while time.time() < end_time:
+        remaining_time = int(end_time - time.time())
+        minutes, seconds = divmod(remaining_time, 60)
+        print(f"[ / ] {task_name}: Kalan süre: {minutes:02}:{seconds:02}", end="\r")
+        time.sleep(1)
+
+    # Zamanlayıcı bittiğinde mesaj
+    print(f"[🆗] {task_name}: Süresi bitti!")
+
 # Çalıştırıcı Fonksiyonlar
 def run_dork_scan():
     print(f"{Fore.CYAN}[+] Dork taraması başlatılıyor...{Style.RESET_ALL}")
@@ -173,8 +188,7 @@ def run_sqlmap():
     print(f"{Fore.CYAN}[+] SQLMAP taraması başlatılıyor...{Style.RESET_ALL}")
 
     level = int(setting.LEVEL)
-    
-    # Level'e göre Risk ayarla
+
     if level <= 2:
         risk = 1
     elif level <= 4:
@@ -182,7 +196,6 @@ def run_sqlmap():
     else:
         risk = 3
 
-    # Derinlik ekleyelim, LEVEL'e göre
     if level == 1:
         depth = 1
     elif level == 2:
@@ -203,6 +216,10 @@ def run_sqlmap():
         "--batch"
     ]
 
+    if setting.RANDOM_AGENT.lower() == "on":
+        user_agent = get_random_useragent()
+        command += ["--user-agent", user_agent]
+
     subprocess.run(command)
 
 def run_wpscan():
@@ -211,9 +228,12 @@ def run_wpscan():
     command = [
         "wpscan",
         "--url", setting.TARGET,
-        "--disable-tls-checks",
-        "--random-user-agent"
+        "--disable-tls-checks"
     ]
+
+    if setting.RANDOM_AGENT.lower() == "on":
+        user_agent = get_random_useragent()
+        command += ["--user-agent", user_agent]
 
     subprocess.run(command)
 
@@ -224,6 +244,10 @@ def run_nikto():
         "nikto",
         "-h", setting.TARGET
     ]
+
+    if setting.RANDOM_AGENT.lower() == "on":
+        user_agent = get_random_useragent()
+        command += ["-useragent", user_agent]
 
     subprocess.run(command)
 
@@ -237,49 +261,89 @@ def run_zaproxy():
         setting.TARGET
     ]
 
+    if setting.RANDOM_AGENT.lower() == "on":
+        user_agent = get_random_useragent()
+        command += ["--user-agent", user_agent]
+
     subprocess.run(command)
 
 def run_metasploit():
     print(f"{Fore.CYAN}[+] METASPLOIT taraması başlatılıyor...{Style.RESET_ALL}")
-
-    # Burada örnek msfconsole komutu basit bırakıldı.
     command = [
         "msfconsole",
         "-q", 
         "-x", f"use auxiliary/scanner/http/http_version; set RHOSTS {setting.TARGET}; run; exit"
     ]
 
+    if setting.RANDOM_AGENT.lower() == "on":
+        user_agent = get_random_useragent()
+        command += ["--user-agent", user_agent]
+
     subprocess.run(command)
 
 def run_full_scan():
     print(f"{Fore.CYAN}[+] FULL tarama başlatılıyor...{Style.RESET_ALL}")
-    run_sqlmap()
-    run_wpscan()
-    run_nikto()
-    run_zaproxy()
-    run_metasploit()
+    threads = []
 
-# Ana işlem akışı
+    # Her tarama fonksiyonu için ayrı bir iş parçacığı başlat
+    if setting.SQLMAP.lower() == "on":
+        thread_sqlmap = threading.Thread(target=run_sqlmap)
+        threads.append(thread_sqlmap)
+
+    if setting.WPSCAN.lower() == "on":
+        thread_wpscan = threading.Thread(target=run_wpscan)
+        threads.append(thread_wpscan)
+
+    if setting.NIKTO.lower() == "on":
+        thread_nikto = threading.Thread(target=run_nikto)
+        threads.append(thread_nikto)
+
+    if setting.ZAPROXY.lower() == "on":
+        thread_zaproxy = threading.Thread(target=run_zaproxy)
+        threads.append(thread_zaproxy)
+
+    if setting.METASPLOIT.lower() == "on":
+        thread_metasploit = threading.Thread(target=run_metasploit)
+        threads.append(thread_metasploit)
+
+    # Tüm iş parçacıklarını başlat
+    for thread in threads:
+        thread.start()
+
+    # Tüm iş parçacıkları tamamlanana kadar bekle
+    for thread in threads:
+        thread.join()
+    
 def işlem_sıralama():
     if setting.DORK or setting.DORK_INPUT:
+        # Zamanlayıcı ekle
+        time_tracker("Dork Tarama", 120)  # 120 saniyelik örnek süre
         run_dork_scan()
     else:
         if setting.FULL_SCAN.lower() == "on":
-            run_sqlmap()
-            run_wpscan()
-            run_nikto()
-            run_zaproxy()
-            run_metasploit()
+            # Zamanlayıcı ekle
+            time_tracker("FULL Tarama", 600)  # 600 saniyelik örnek süre
+            run_full_scan()
         else:
             if setting.SQLMAP.lower() == "on":
+                # Zamanlayıcı ekle
+                time_tracker("SQLMAP Tarama", 60)  # 60 saniyelik örnek süre
                 run_sqlmap()
             if setting.WPSCAN.lower() == "on":
+                # Zamanlayıcı ekle
+                time_tracker("WPSCAN Tarama", 60)  # 60 saniyelik örnek süre
                 run_wpscan()
             if setting.NIKTO.lower() == "on":
+                # Zamanlayıcı ekle
+                time_tracker("NIKTO Tarama", 60)  # 60 saniyelik örnek süre
                 run_nikto()
             if setting.ZAPROXY.lower() == "on":
+                # Zamanlayıcı ekle
+                time_tracker("ZAPROXY Tarama", 60)  # 60 saniyelik örnek süre
                 run_zaproxy()
             if setting.METASPLOIT.lower() == "on":
+                # Zamanlayıcı ekle
+                time_tracker("METASPLOIT Tarama", 60)  # 60 saniyelik örnek süre
                 run_metasploit()
 
 if __name__ == "__main__":
