@@ -2,3 +2,4 @@ TARGET_FILE_PATH = ""
 LEVEL = 3
 FAST_SCAN = "off"
 RANDOM_AGENT = "on"
+"""### dork da random agent zorunlu"""
