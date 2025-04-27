@@ -1,5 +1,6 @@
 import argparse
 import os
+import subprocess
 
 SETTINGS_FILE = "config/setting.py"
 
@@ -19,9 +20,10 @@ def banner():
             """)
     print("[*]\tFunnelWS Web Vulnerability Scanner")
     version()
+    print("======================================================\n")
 
 def version():
-    print("[*]\tFunnelWS Version 1.002\n")
+    print("[*]\tFunnelWS Version BETA_1.002\n")
 
 def help_menu():
     print("""
@@ -67,30 +69,29 @@ def help_menu():
     ║  --banner                   Banner'ı gösterir        ║
     ║  --version, --v             Sürüm bilgisini verir    ║
     ║  --help, --h                Yardım menüsünü gösterir ║
+    ║  --start                    ana starter/başlatıcı    ║ 
     ╚══════════════════════════════════════════════════════╝
     """)
 
-def target(target):
-    print(f"[+] Hedef: {target}")
+def target(target_value):
     updated_lines = []
-    found = False
 
-    # settings.py dosyasını oku
-    with open(SETTINGS_FILE, "r") as f:
+    if not os.path.exists(SETTINGS_FILE):
+        print(f"[!] Hata: Ayar dosyası bulunamadı: {SETTINGS_FILE}")
+        return
+
+    with open(SETTINGS_FILE, "r", encoding="utf-8") as f:
         for line in f:
-            if line.startswith("TARGET"):
-                updated_lines.append(f'TARGET = "{target}"\n')
-                found = True
-            else:
+            if not line.strip().startswith("TARGET"):
                 updated_lines.append(line)
 
-    # Eğer TARGET yoksa ekle
-    if not found:
-        updated_lines.append(f'TARGET = "{target}"\n')
+    updated_lines.append(f'TARGET = "{target_value}"\n')
 
-    # Dosyayı güncelle
-    with open(SETTINGS_FILE, "w") as f:
+    with open(SETTINGS_FILE, "w", encoding="utf-8") as f:
         f.writelines(updated_lines)
+
+    print(f"[+] TARGET güncellendi: {target_value}")
+
 
 def target_input(file_path):
     updated_lines = []
@@ -162,6 +163,37 @@ def level(lv):
 def set_fast_scan_mode(is_enabled):
     mode = "on" if is_enabled else "off"
     print(f"[+] FAST_SCAN modu: {mode}")
+
+    if not os.path.exists(SETTINGS_FILE):
+        print(f"[!] Hata: Ayar dosyası bulunamadı: {SETTINGS_FILE}")
+        return
+
+    updated_lines = []
+    found = False
+
+    with open(SETTINGS_FILE, "r") as f:
+        for line in f:
+            if line.strip().startswith("FAST_SCAN"):
+                updated_lines.append(f'FAST_SCAN = "{mode}"\n')
+                found = True
+            else:
+                updated_lines.append(line)
+
+    if not found:
+        updated_lines.append(f'FAST_SCAN = "{mode}"\n')
+
+    with open(SETTINGS_FILE, "w") as f:
+        f.writelines(updated_lines)
+
+    print(f"[+] FAST_SCAN ayarlandı: {mode}")
+
+
+def run_fast_scan():
+    print("[*] Hızlı tarama seçeneği seçildi!")
+
+def full_scan(is_enabled):
+    mode = "on" if is_enabled else "off"
+    print(f"[+] FULL_SCAN modu: {mode}")
     updated_lines = []
     found = False
     if not os.path.exists(SETTINGS_FILE):
@@ -169,28 +201,72 @@ def set_fast_scan_mode(is_enabled):
         return
     with open(SETTINGS_FILE, "r") as f:
         for line in f:
-            if line.startswith("FAST_SCAN"):
-                updated_lines.append(f'FAST_SCAN = "{mode}"\n')
+            if line.startswith("FULL_SCAN"):
+                updated_lines.append(f'FULL_SCAN = "{mode}"\n')
                 found = True
             else:
                 updated_lines.append(line)
     if not found:
-        updated_lines.append(f'FAST_SCAN = "{mode}"\n')
+        updated_lines.append(f'FULL_SCAN = "{mode}"\n')
     with open(SETTINGS_FILE, "w") as f:
         f.writelines(updated_lines)
-    print(f"[+] FAST_SCAN ayarlanırken bir sorun çıkmadı mod :  {mode}")
+    print(f"[+] FULL_SCAN ayarlanırken bir sorun çıkmadı mod :  {mode}")
 
-def run_fast_scan():
+def run_full_scan():
     print("[*] Hızlı tarama seçeneği seçildi!")
 
-def full_scan(): ###daha sonra ayarlancak 
-    print("[*] Detaylı tarama başlatıldı...")
+def dork_search(dork):
+    print(f"[+] Dork: {dork}")
+    updated_lines = []
+    found = False
 
-def dork_search(dork): ###daha sonra ayarlancak
-    print(f"[+] Dork ile arama: {dork}")
+    # settings.py dosyasını oku
+    with open(SETTINGS_FILE, "r") as f:
+        for line in f:
+            if line.startswith("DORK") and not found:
+                updated_lines.append(f'DORK = "{dork}"\n')
+                found = True
+            elif not line.startswith("DORK"):
+                updated_lines.append(line)
+            # Eğer DORK satırı bulunmuşsa ve yeni bir DORK satırı daha gelirse onu atlıyoruz
 
-def dork_input(file): ###daha sonra ayarlancak
-    print(f"[+] Dork listesi dosyadan alınıyor: {file}")
+    # Eğer hiç DORK bulunmadıysa dosya sonuna ekle
+    if not found:
+        updated_lines.append(f'DORK = "{dork}"\n')
+
+    # Dosyayı güncelle
+    with open(SETTINGS_FILE, "w") as f:
+        f.writelines(updated_lines)
+
+def dork_input(dork_file):
+    updated_lines = []
+    found = False
+    file_name = os.path.basename(dork_file)
+
+    if not os.path.exists(SETTINGS_FILE):
+        print(f"[!] Hata: Ayar dosyası bulunamadı: {SETTINGS_FILE}")
+        print(f"[!] Lütfen hatayı düzeltin ve tekrar deneyin")
+        return
+
+    # settings.py dosyasını oku
+    with open(SETTINGS_FILE, "r") as f:
+        for line in f:
+            if line.startswith("DORK_INPUT_FILE"):
+                updated_lines.append(f'DORK_INPUT_FILE = "{dork_file}"\n')
+                found = True
+            else:
+                updated_lines.append(line)
+
+    # Eğer TARGET_FILE_PATH yoksa ekle
+    if not found:
+        updated_lines.append(f'DORK_INPUT_FILE = "{dork_file}"\n')
+
+    # Dosyayı güncelle
+    with open(SETTINGS_FILE, "w") as f:
+        f.writelines(updated_lines)
+
+    print(f"[+] TARGET_FILE_PATH update edildi : {dork_file}")
+    print(f"[+] File name: {file_name}")
 
 # Açık türleri ###daha sonra ayarlancak
 def scan_sqli():###daha sonra ayarlancak
@@ -200,23 +276,149 @@ def scan_xxs():###daha sonra ayarlancak
     print("[*] XXS taraması başlatıldı...")
 
 # Tool çağrıları
-def use_sqlmap():
-    print("[*] SQLMap aracı kullanılıyor...")
+def use_sqlmap(is_enabled):
+    updated_lines = []
+    mode = "on" if is_enabled else "off"
 
-def use_nmap():
-    print("[*] Nmap aracı kullanılıyor...")
+    if not os.path.exists(SETTINGS_FILE):
+        print(f"[!] Hata: Ayar dosyası bulunamadı: {SETTINGS_FILE}")
+        return
 
-def use_wpscan():
-    print("[*] WPScan aracı kullanılıyor...")
+    with open(SETTINGS_FILE, "r", encoding="utf-8") as f:
+        for line in f:
+            if not line.strip().startswith("SQLMAP"):
+                updated_lines.append(line)
 
-def use_nikto():
-    print("[*] Nikto aracı kullanılıyor...")
+    updated_lines.append(f'SQLMAP = "{mode}"\n')
 
-def use_zaproxy():
-    print("[*] Zaproxy aracı kullanılıyor...")
+    with open(SETTINGS_FILE, "w", encoding="utf-8") as f:
+        f.writelines(updated_lines)
 
-def use_metasploit():
-    print("[*] Metasploit aracı kullanılıyor...")
+    print(f"[+] SQLMAP modu güncellendi: {mode}")
+
+
+def run_use_sqlmap():
+    print("[*] sqlmap aracı kullanılacak !")
+
+def use_nmap(is_enabled):
+    mode = "on" if is_enabled else "off"
+    print(f"[+] NMAP modu: {mode}")
+    updated_lines = []
+    found = False
+    if not os.path.exists(SETTINGS_FILE):
+        print(f"[!] Hata: Ayar dosyası bulunamadı: {SETTINGS_FILE}")
+        return
+    with open(SETTINGS_FILE, "r") as f:
+        for line in f:
+            if line.startswith("NMAP"):
+                updated_lines.append(f'NMAP = "{mode}"\n')
+                found = True
+            else:
+                updated_lines.append(line)
+    if not found:
+        updated_lines.append(f'NMAP = "{mode}"\n')
+    with open(SETTINGS_FILE, "w") as f:
+        f.writelines(updated_lines)
+    print(f"[+] NMAP ayarlanırken bir sorun çıkmadı mod :  {mode}")
+
+def run_use_nmap():
+    print("[*] NMAP aracı kullanılacak !")
+
+def use_wpscan(is_enabled):
+    mode = "on" if is_enabled else "off"
+    print(f"[+] WP-SCAN modu: {mode}")
+    updated_lines = []
+    found = False
+    if not os.path.exists(SETTINGS_FILE):
+        print(f"[!] Hata: Ayar dosyası bulunamadı: {SETTINGS_FILE}")
+        return
+    with open(SETTINGS_FILE, "r") as f:
+        for line in f:
+            if line.startswith("WPSCAN"):
+                updated_lines.append(f'WPSCAN = "{mode}"\n')
+                found = True
+            else:
+                updated_lines.append(line)
+    if not found:
+        updated_lines.append(f'WPSCAN = "{mode}"\n')
+    with open(SETTINGS_FILE, "w") as f:
+        f.writelines(updated_lines)
+    print(f"[+] WP-SCAN ayarlanırken bir sorun çıkmadı mod :  {mode}")
+
+def run_use_wpscan():
+    print("[*] WP-SCAN aracı kullanılacak !")
+
+def use_nikto(is_enabled):
+    mode = "on" if is_enabled else "off"
+    print(f"[+] NİKTO modu: {mode}")
+    updated_lines = []
+    found = False
+    if not os.path.exists(SETTINGS_FILE):
+        print(f"[!] Hata: Ayar dosyası bulunamadı: {SETTINGS_FILE}")
+        return
+    with open(SETTINGS_FILE, "r") as f:
+        for line in f:
+            if line.startswith("NIKTO"):
+                updated_lines.append(f'NIKTO = "{mode}"\n')
+                found = True
+            else:
+                updated_lines.append(line)
+    if not found:
+        updated_lines.append(f'NIKTO = "{mode}"\n')
+    with open(SETTINGS_FILE, "w") as f:
+        f.writelines(updated_lines)
+    print(f"[+] NİKTO ayarlanırken bir sorun çıkmadı mod :  {mode}")
+
+def run_use_nikto():
+    print("[*] Nikto aracı kullanılacak !")
+
+def use_zaproxy(is_enabled):
+    mode = "on" if is_enabled else "off"
+    print(f"[+] ZAPROXY modu: {mode}")
+    updated_lines = []
+    found = False
+    if not os.path.exists(SETTINGS_FILE):
+        print(f"[!] Hata: Ayar dosyası bulunamadı: {SETTINGS_FILE}")
+        return
+    with open(SETTINGS_FILE, "r") as f:
+        for line in f:
+            if line.startswith("ZAPROXY"):
+                updated_lines.append(f'ZAPROXY = "{mode}"\n')
+                found = True
+            else:
+                updated_lines.append(line)
+    if not found:
+        updated_lines.append(f'ZAPROXY = "{mode}"\n')
+    with open(SETTINGS_FILE, "w") as f:
+        f.writelines(updated_lines)
+    print(f"[+] ZAPROXY ayarlanırken bir sorun çıkmadı mod :  {mode}")
+
+def run_use_zaproxy():
+    print("[*] ZAPROXY (OWASP) aracı kullanılacak !")
+
+def use_metasploit(is_enabled):
+    mode = "on" if is_enabled else "off"
+    print(f"[+] METASPLOİT modu: {mode}")
+    updated_lines = []
+    found = False
+    if not os.path.exists(SETTINGS_FILE):
+        print(f"[!] Hata: Ayar dosyası bulunamadı: {SETTINGS_FILE}")
+        return
+    with open(SETTINGS_FILE, "r") as f:
+        for line in f:
+            if line.startswith("METASPLOIT"):
+                updated_lines.append(f'METASPLOIT = "{mode}"\n')
+                found = True
+            else:
+                updated_lines.append(line)
+    if not found:
+        updated_lines.append(f'METASPLOIT = "{mode}"\n')
+    with open(SETTINGS_FILE, "w") as f:
+        f.writelines(updated_lines)
+    print(f"[+] METASPLOİT ayarlanırken bir sorun çıkmadı mod :  {mode}")
+
+def run_use_metasploit():
+    print("[*] METASPLOİT aracı kullanılacak !")
 
 # Raporlama
 def report(report_type):
@@ -227,22 +429,22 @@ def report(report_type):
     if not os.path.exists(SETTINGS_FILE):
         print(f"[!] Hata: Ayar dosyası bulunamadı: {SETTINGS_FILE}")
         return
-
-        with open(SETTINGS_FILE, "r") as f:
-            for line in f:
-                if line.startswith("REPORT_TYPE"):
-                    updated_lines.append(f'REPORT_TYPE = "{report_type}"')
-                    found = True
-                else:
-                    updated_lines.append(line)
+    
+    with open(SETTINGS_FILE, "r", encoding="utf-8") as f:
+        for line in f:
+            if line.strip().startswith("REPORT_TYPE"):
+                updated_lines.append(f'REPORT_TYPE = "{report_type}"\n')
+                found = True
+            else:
+                updated_lines.append(line)
 
     if not found:
-        updated_lines.append(f'REPORT_TYPE = "{report_type}"')
+        updated_lines.append(f'REPORT_TYPE = "{report_type}"\n')
 
-        with open(SETTINGS_FILE, "w") as f:
-            f.writelines(updated_lines)
+    with open(SETTINGS_FILE, "w", encoding="utf-8") as f:
+        f.writelines(updated_lines)
 
-    print("[+] Rapor tipi ayarlandı: {report_type}")
+    print(f"[+] Rapor tipi ayarlandı: {report_type}")
 
 def use_tor(): ###daha sonra ayarlancak
 
@@ -275,13 +477,19 @@ def set_random_agent_mode(is_enabled):
     with open(SETTINGS_FILE, "w") as f:
         f.writelines(updated_lines)
 
-    print(f"[+] RANDOM_AGENT ayarlandı: {mode}")
+    print(f"[+] RANDOM_AGENT ayarlanırken bir sorun çıkmadı mod :  {mode}")
+
+def start():
+    banner()
+    print("[*]\t starter başlatılıyor")
+    subprocess.run(["python", "starter.py"])
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="FunnelWS - Web Vulnerability Scanner", add_help=False)
 
     parser.add_argument("--target", "--t", help="Hedef domain/IP", dest="target")
     parser.add_argument("--target-input", "--t-input", help="Hedef listesini içeren dosya", dest="target_input")
+    
     parser.add_argument("--level", "--lv", help="Tarama seviyesi")
     parser.add_argument("--fast", action="store_true", help="Hızlı tarama modu")
     parser.add_argument("--full", "--all", action="store_true", help="Detaylı tarama modu")
@@ -314,14 +522,22 @@ if __name__ == "__main__":
     parser.add_argument("--tor", action="store_true", help="Tor üzerinden tarama")
     parser.add_argument("--user-agent", "--random-agent", action="store_true", help="user agent ile taramalar yapar")
 
+    ##ayarlanmadılar!!
+    parser.add_argument("--threads", type=int, default=5, help="İş parçacığı (thread) sayısı (varsayılan: 5)")
+    parser.add_argument("--timeout", type=int, default=10, help="İstek zaman aşımı (saniye) (varsayılan: 10)")
+    parser.add_argument("--verbose", action="store_true", help="Detaylı çıktı ver")
+    
+    parser.add_argument("--start", action="store_true", help="ana başlatıcı/starter")
+
     args = parser.parse_args()
 
     # Argümanlara göre fonksiyonları çalıştır
     if args.banner:
         banner()
     if args.version:
-        version()
+        banner()
     if args.help:
+        banner()
         help_menu()
     if args.target:
         target(args.target)
@@ -331,33 +547,36 @@ if __name__ == "__main__":
         level(args.level)
     if args.fast:
         run_fast_scan()
-    set_fast_scan_mode(args.fast)
-
+        set_fast_scan_mode(args.fast)
     if args.full:
-        full_scan()
+        run_full_scan()
+        full_scan(args.full)
     if args.dork:
         dork_search(args.dork)
     if args.dork_input:
         dork_input(args.dork_input)
-
     if args.sqli:
         scan_sqli()
     if args.xxs:
         scan_xxs()
-
     if args.sqlmap:
-        use_sqlmap()
+        run_use_sqlmap()
+        use_sqlmap(args.sqlmap)
     if args.nmap:
-        use_nmap()
+        run_use_nmap()
+        use_nmap(args.nmap)
     if args.wpscan:
-        use_wpscan()
+        run_use_wpscan()
+        use_wpscan(args.wpscan)
     if args.nikto:
-        use_nikto()
+        run_use_nikto()
+        use_nikto(args.nikto)
     if args.zaproxy:
-        use_zaproxy()
+        run_use_zaproxy()
+        use_zaproxy(args.zaproxy)
     if args.metasploit:
-        use_metasploit()
-
+        run_use_metasploit()
+        use_metasploit(args.metasploit)
     if args.report:
         report(args.report)
     if args.report_html:
@@ -368,5 +587,7 @@ if __name__ == "__main__":
         report("pdf")
     if args.user_agent:
         use_random_agent()
-    set_random_agent_mode(args.user_agent)
+        set_random_agent_mode(args.user_agent)
 
+    if args.start:
+        start()
