@@ -404,6 +404,30 @@ def use_metasploit(is_enabled):
 def run_use_metasploit():
     print("[*] METASPLOİT aracı kullanılacak !")
 
+def run_use_whois():
+    print("[*] WHOİS aracı kullanılacak !")
+
+def use_whois(is_enabled):
+    mode = "on" if is_enabled else "off"
+    print(f"[+] WHOİS modu: {mode}")
+    updated_lines = []
+    found = False
+    if not os.path.exists(SETTINGS_FILE):
+        print(f"[!] Hata: Ayar dosyası bulunamadı: {SETTINGS_FILE}")
+        return
+    with open(SETTINGS_FILE, "r") as f:
+        for line in f:
+            if line.startswith("WHOİS"):
+                updated_lines.append(f'WHOİS = "{mode}"\n')
+                found = True
+            else:
+                updated_lines.append(line)
+    if not found:
+        updated_lines.append(f'WHOİS = "{mode}"\n')
+    with open(SETTINGS_FILE, "w") as f:
+        f.writelines(updated_lines)
+    print(f"[+] WHOİS ayarlanırken bir sorun çıkmadı mod :  {mode}")
+
 def report(report_type):
     print(f"[*] Rapor tipi: {report_type}")
     updated_lines = []
@@ -494,6 +518,7 @@ if __name__ == "__main__":
     parser.add_argument("--nikto", "--tool-nikto", action="store_true", help="Nikto kullan")
     parser.add_argument("--zaproxy", "--tool-zaproxy", action="store_true", help="Zaproxy kullan")
     parser.add_argument("--metasploit", "--tool-metasploit", action="store_true", help="Metasploit kullan")
+    parser.add_argument("--whois", "--tool-whois", action="store_true", help="whois kullan")
 
     parser.add_argument("--report", choices=["json", "html", "pdf"], help="Rapor formatı")
     parser.add_argument("--report-html", action="store_true", help="HTML raporu")
@@ -524,7 +549,8 @@ if __name__ == "__main__":
         "NIKTO": "off",
         "ZAPROXY": "off",
         "METASPLOIT": "off",
-        "RANDOM_AGENT": "off"
+        "RANDOM_AGENT": "off",
+        "WHOİS": "off"
     }
 
     # Eğer ayar dosyası yoksa, varsayılan ayarlarla oluştur
@@ -579,6 +605,9 @@ if __name__ == "__main__":
     if args.metasploit:
         run_use_metasploit()
         use_metasploit(True)  # "on" olarak ayarla
+    if args.whois:
+        run_use_whois()
+        use_whois(True)  # "on" olarak ayarla    
     if args.report:
         report(args.report)
     if args.report_html:

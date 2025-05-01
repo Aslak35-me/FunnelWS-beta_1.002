@@ -63,6 +63,7 @@ def check_settings():
         ("NIKTO", setting.NIKTO),
         ("ZAPROXY", setting.ZAPROXY),
         ("METASPLOIT", setting.METASPLOIT)
+        ("WHOİS", setting.WHOİS)
     ]
 
     for name, value in checks:
@@ -214,6 +215,19 @@ def run_metasploit():
     command = ["msfconsole", "-q", "-x", f"use auxiliary/scanner/http/http_version; set RHOSTS {setting.TARGET}; run; exit"]
     subprocess.run(command)
 
+def run_whois():
+    print(f"{Fore.CYAN}[+] WHOIS taraması başlatılıyor...{Style.RESET_ALL}")
+    command = ["whois", setting.TARGET]
+    try:
+        result = subprocess.run(command, capture_output=True, text=True, check=True)
+        print(f"{Fore.GREEN}[+] WHOIS Sonuçları:\n{result.stdout}{Style.RESET_ALL}")
+        os.makedirs("scan_results", exist_ok=True)
+        with open("scan_results/whois_result.txt", "w", encoding="utf-8") as f:
+            f.write(result.stdout)
+        print(f"{Fore.GREEN}[+] WHOIS sonuçları 'scan_results/whois_result.txt' dosyasına kaydedildi.{Style.RESET_ALL}")
+    except subprocess.CalledProcessError as e:
+        print(f"{Fore.RED}[!] WHOIS komutu çalıştırılırken hata oluştu: {e}{Style.RESET_ALL}")
+
 def run_full_scan():
     print(f"{Fore.CYAN}[+] FULL tarama başlatılıyor...{Style.RESET_ALL}")
     threads = []
@@ -247,6 +261,7 @@ def işlem_sıralama():
             (setting.NIKTO, run_nikto, "NIKTO"),
             (setting.ZAPROXY, run_zaproxy, "ZAPROXY"),
             (setting.METASPLOIT, run_metasploit, "METASPLOIT")
+            (setting.WHOİS, run_whois, "WHOİS")
         ]
         for active, func, name in scans:
             if active.lower() == "on":
