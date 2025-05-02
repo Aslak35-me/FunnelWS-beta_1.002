@@ -134,7 +134,7 @@ def time_tracker(task_name, duration_in_seconds):
         time.sleep(1)
     print(f"[🆗] {task_name}: Süresi bitti!")
 
-# --- Tarama Fonksiyonları ---
+# Tarama Fonksiyonları
 
 def run_dork_scan():
     print(f"{Fore.CYAN}[+] Dork taraması başlatılıyor...{Style.RESET_ALL}")
