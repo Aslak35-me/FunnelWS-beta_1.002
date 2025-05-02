@@ -12,7 +12,7 @@ from selenium import webdriver
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.service import Service
-from webdriver_manager.chrome import ChromeDriverManager
+from webdriver_manager.chrome import ChromeDriverManager # type: ignore
 
 # colorama başlat
 init(autoreset=True)
@@ -21,8 +21,8 @@ init(autoreset=True)
 sys.path.append(os.path.join(os.path.dirname(__file__), 'config'))
 
 import config.setting as setting
-import useragent
-from useragent import get_random_useragent
+import useragent  # type: ignore
+from useragent import get_random_useragent  # type: ignore
 
 # Global driver değişkeni
 driver = None
