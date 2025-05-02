@@ -7,9 +7,7 @@ from typing import List, Dict, Optional
 from urllib.parse import urlparse
 import requests
 from colorama import init, Fore, Style
-from settings import TARGET_FILE_PATH, TARGET, TARGET_FILE_CHECK
-
-
+from settings import TARGET_FILE_PATH, TARGET, TARGET_FILE_CHECK # type: ignore
 
 init(autoreset=True)
 

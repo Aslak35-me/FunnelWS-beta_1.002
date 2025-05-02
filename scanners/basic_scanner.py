@@ -9,7 +9,7 @@ import ssl
 from urllib.parse import urlparse
 from config.useragent import get_random_useragent  # Artık doğrudan buradan çekiyoruz
 import config.setting as setting
-
+from settings import TARGET_FILE_PATH, TARGET, TARGET_FILE_CHECK # type: ignore
 
 """
 
@@ -73,6 +73,7 @@ def get_ip_info(target):
     try:
         domain = urlparse(target).netloc
         ip_address = socket.gethostbyname(domain)
+    
         dns_records = {}
         for record_type in ['A', 'AAAA', 'MX', 'NS', 'TXT', 'CNAME']:
             try:

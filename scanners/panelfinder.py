@@ -3,9 +3,9 @@ from urllib.parse import urlparse
 from bs4 import BeautifulSoup
 import threading
 import ftplib
-
 from config import useragent
 from config import colorprint
+### target alma sistemi yanlış düzeltilicek
 PanelFound = []
 
 def check_ftp_port(host):
@@ -15,6 +15,7 @@ def check_ftp_port(host):
         return True
     except ftplib.all_errors as e:
         return False
+
 def panel_check(url,panels):
     global PanelFound
     durum = 0

@@ -2,7 +2,7 @@ import subprocess
 from urllib.parse import urlparse
 import re
 import os
-from settings import TARGET_FILE_PATH, TARGET, TARGET_FILE_CHECK
+from settings import TARGET_FILE_PATH, TARGET, TARGET_FILE_CHECK # type: ignore
 
 tables_pattern = r"available databases\s*\[(\d+)\]"
 

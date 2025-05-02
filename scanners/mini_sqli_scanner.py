@@ -8,10 +8,10 @@ from concurrent.futures import ThreadPoolExecutor
 from urllib.parse import urlparse, urlsplit, urlunsplit, parse_qs, urlencode
 import colorama
 from colorama import init, Fore, Style
-from tools import useragent
-from tools import colorprint
+from tools import useragent # type: ignore
+from tools import colorprint # type: ignore
 import config.setting as setting
-from settings import TARGET_FILE_PATH, TARGET, TARGET_FILE_CHECK
+from settings import TARGET_FILE_PATH, TARGET, TARGET_FILE_CHECK # type: ignore
 
 init(autoreset=True)
 
@@ -29,8 +29,8 @@ request_timeout = 20
 # Directory and file paths
 SCAN_RESULTS_DIR = "scan_results"
 LOG_DIR = "log/sql_inj"
-SCAN_RESULTS_FILE = os.path.join(SCAN_RESULTS_DIR, "tht_opsdk_sqli_scanner.txt")
-LOG_FILE = os.path.join(LOG_DIR, "tht_opsdk_sqli_scanner_log.txt")
+SCAN_RESULTS_FILE = os.path.join(SCAN_RESULTS_DIR, "mini_sqli_scanner.txt")
+LOG_FILE = os.path.join(LOG_DIR, "mini_sqli_scanner_log.txt")
 
 class VulnDetector:
     def __init__(self):
@@ -121,7 +121,7 @@ def generate_payloads(param, value):
         f"{param}=1 AND 1=CONVERT(int,@@version)",
         f"{param}=1 AND 1=1 UNION SELECT 1,2,3,4,5,6--",
         f"{param}=1 AND (SELECT * FROM (SELECT(SLEEP(5)))bAKL) AND 'vRxe'='vRxe"
-    ]
+]
     return payloads
 
 def test_parameter(url, param, original_value):
