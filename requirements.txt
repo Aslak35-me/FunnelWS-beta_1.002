@@ -1,0 +1,6 @@
+colorama
+requests
+dnspython
+beautifulsoup4
+selenium
+webdriver-manager

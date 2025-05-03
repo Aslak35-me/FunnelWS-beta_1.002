@@ -21,7 +21,9 @@ if [[ "$platform" == "Linux" ]]; then
     pip3 install colorama requests beautifulsoup4 selenium bs4 dnspython python-whois
     pip install selenium
     pip install webdriver-manager
-
+# requirements.txt üzerinden kütüphanelerin kurulumu
+    echo "[+] Gereken Python kütüphaneleri yükleniyor..."
+    pip install -r requirements.txt
 
     echo -e "${CYAN}Güvenlik araçları indiriliyor...${RESET}"
     # Araçları GitHub'dan klonla
@@ -53,7 +55,10 @@ elif [[ "$platform" == "Darwin" ]]; then
     echo -e "${CYAN}Python bağımlılıkları yükleniyor...${RESET}"
     pip3 install colorama requests beautifulsoup4 selenium bs4 dnspython python-whois
     pip install selenium
-    pip install webdriver-manager
+    pip install webdriver-manage
+    # requirements.txt üzerinden kütüphanelerin kurulumu
+    echo "[+] Gereken Python kütüphaneleri yükleniyor..."
+    pip install -r requirements.txt
 
 
     echo -e "${CYAN}Güvenlik araçları indiriliyor...${RESET}"
