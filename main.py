@@ -95,7 +95,27 @@ def target(target_value):
     save_settings(settings)
     print(f"[+] TARGET güncellendi: {target_value}")
 
-def target_check(is_enabled):
+def use_targe_check(is_enabled):
+    mode = "on" if is_enabled else "off"
+
+    # Dosya varsa oku, yoksa boş sözlük başlat
+    if os.path.exists(SETTINGS_FILE):
+        with open(SETTINGS_FILE, "r", encoding="utf-8") as f:
+            try:
+                settings = json.load(f)
+            except json.JSONDecodeError:
+                settings = {}
+    else:
+        settings = {}
+
+    # NMAP modunu güncelle
+    settings["TARGET_FİLE_CHECK"] = mode
+
+    # JSON dosyasına yaz
+    with open(SETTINGS_FILE, "w", encoding="utf-8") as f:
+        json.dump(settings, f, indent=4, ensure_ascii=False)
+
+    print(f"[+] TARGET FİLE modu güncellendi: {mode}")
 
 def target_input(file_path):
     settings = load_settings()
@@ -120,32 +140,11 @@ def level(lv):
     save_settings(settings)
     print(f"[+] LEVEL güncellendi: {lv}")
 
-
 def set_fast_scan_mode(is_enabled):
     mode = "on" if is_enabled else "off"
-    print(f"[+] FAST_SCAN modu: {mode}")
-
-    if not os.path.exists(SETTINGS_FILE):
-        print(f"[!] Hata: Ayar dosyası bulunamadı: {SETTINGS_FILE}")
-        return
-
-    updated_lines = []
-    found = False
-
-    with open(SETTINGS_FILE, "r") as f:
-        for line in f:
-            if line.strip().startswith("FAST_SCAN"):
-                updated_lines.append(f'FAST_SCAN = "{mode}"\n')
-                found = True
-            else:
-                updated_lines.append(line)
-
-    if not found:
-        updated_lines.append(f'FAST_SCAN = "{mode}"\n')
-
-    with open(SETTINGS_FILE, "w") as f:
-        f.writelines(updated_lines)
-
+    settings = load_settings()
+    settings["FAST_SCAN"] = mode
+    save_settings(settings)
     print(f"[+] FAST_SCAN ayarlandı: {mode}")
 
 def run_fast_scan():
@@ -153,79 +152,33 @@ def run_fast_scan():
 
 def full_scan(is_enabled):
     mode = "on" if is_enabled else "off"
-    print(f"[+] FULL_SCAN modu: {mode}")
-    updated_lines = []
-    found = False
-    if not os.path.exists(SETTINGS_FILE):
-        print(f"[!] Hata: Ayar dosyası bulunamadı: {SETTINGS_FILE}")
-        return
-    with open(SETTINGS_FILE, "r") as f:
-        for line in f:
-            if line.startswith("FULL_SCAN"):
-                updated_lines.append(f'FULL_SCAN = "{mode}"\n')
-                found = True
-            else:
-                updated_lines.append(line)
-    if not found:
-        updated_lines.append(f'FULL_SCAN = "{mode}"\n')
-    with open(SETTINGS_FILE, "w") as f:
-        f.writelines(updated_lines)
-    print(f"[+] FULL_SCAN ayarlanırken bir sorun çıkmadı mod :  {mode}")
+    settings = load_settings()
+    settings["FULL_SCAN"] = mode
+    save_settings(settings)
+    print(f"[+] FULL_SCAN ayarlandı: {mode}")
 
 def run_full_scan():
     print("[*] Hızlı tarama seçeneği seçildi!")
 
 def dork_search(dork):
-    print(f"[+] Dork: {dork}")
-    updated_lines = []
-    found = False
-
-    with open(SETTINGS_FILE, "r") as f:
-        for line in f:
-            if line.startswith("DORK") and not found:
-                updated_lines.append(f'DORK = "{dork}"\n')
-                found = True
-            elif not line.startswith("DORK"):
-                updated_lines.append(line)
-
-    if not found:
-        updated_lines.append(f'DORK = "{dork}"\n')
-
-    with open(SETTINGS_FILE, "w") as f:
-        f.writelines(updated_lines)
+    settings = load_settings()
+    settings["DORK"] = dork
+    save_settings(settings)
+    print(f"[+] DORK ayarlandı: {dork}")
 
 def dork_input(dork_file):
-    updated_lines = []
-    found = False
+    settings = load_settings()
     file_name = os.path.basename(dork_file)
-
-    if not os.path.exists(SETTINGS_FILE):
-        print(f"[!] Hata: Ayar dosyası bulunamadı: {SETTINGS_FILE}")
-        print(f"[!] Lütfen hatayı düzeltin ve tekrar deneyin")
-        return
-
-    with open(SETTINGS_FILE, "r") as f:
-        for line in f:
-            if line.startswith("DORK_INPUT_FILE"):
-                updated_lines.append(f'DORK_INPUT_FILE = "{dork_file}"\n')
-                found = True
-            else:
-                updated_lines.append(line)
-
-    if not found:
-        updated_lines.append(f'DORK_INPUT_FILE = "{dork_file}"\n')
-
-    with open(SETTINGS_FILE, "w") as f:
-        f.writelines(updated_lines)
-
-    print(f"[+] TARGET_FILE_PATH update edildi : {dork_file}")
+    settings["DORK_INPUT_FILE"] = dork_file
+    save_settings(settings)
+    print(f"[+] DORK_INPUT_FILE update edildi : {dork_file}")
     print(f"[+] File name: {file_name}")
 
 def scan_sqli():
-    print("[*] SQLi taraması başlatıldı...")
+    print_error_and_exit("[*] açık seçme işlemi şuanlık kullanılamıyor... \n [*] lütfen açık seçme (sqli) parametresini kullanmayınız!")
 
 def scan_xxs():
-    print("[*] XXS taraması başlatıldı...")
+    print_error_and_exit("[*] açık seçme işlemi şuanlık kullanılamıyor... \n [*] lütfen açık seçme (xss) parametresini kullanmayınız!")
 
 def use_sqlmap(is_enabled):
 
@@ -536,8 +489,10 @@ if __name__ == "__main__":
         banner()
         help_menu()
     if args.target:
+        use_targe_check(False)
         target(args.target)
     if args.target_input:
+        use_targe_check(True)
         target_input(args.target_input)
     if args.level:
         level(args.level)

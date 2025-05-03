@@ -7,12 +7,13 @@ import time
 import colorama
 import selenium
 import threading
+import json
 from colorama import init, Fore, Style
 from selenium import webdriver
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.service import Service
-from webdriver_manager.chrome import ChromeDriverManager # type: ignore
+from webdriver_manager.chrome import ChromeDriverManager 
 
 # colorama başlat
 init(autoreset=True)
@@ -20,9 +21,12 @@ init(autoreset=True)
 # config klasörünü sys.path'e ekle
 sys.path.append(os.path.join(os.path.dirname(__file__), 'config'))
 
-import config.setting as setting
-import useragent  # type: ignore
-from useragent import get_random_useragent  # type: ignore
+# setting.json dosyasını oku
+with open(os.path.join(os.path.dirname(__file__), 'config', 'setting.json'), 'r', encoding='utf-8') as f:
+    setting = json.load(f)
+
+import useragent
+from useragent import get_random_useragent
 
 # Global driver değişkeni
 driver = None
@@ -56,14 +60,14 @@ def version():
 
 def check_settings():
     checks = [
-        ("FULL_SCAN", setting.FULL_SCAN),
-        ("FAST_SCAN", setting.FAST_SCAN),
-        ("SQLMAP", setting.SQLMAP),
-        ("WPSCAN", setting.WPSCAN),
-        ("NIKTO", setting.NIKTO),
-        ("ZAPROXY", setting.ZAPROXY),
-        ("METASPLOIT", setting.METASPLOIT)
-        ("WHOİS", setting.WHOİS)
+        ("FULL_SCAN", setting.get("FULL_SCAN", "off")),
+        ("FAST_SCAN", setting.get("FAST_SCAN", "off")),
+        ("SQLMAP", setting.get("SQLMAP", "off")),
+        ("WPSCAN", setting.get("WPSCAN", "off")),
+        ("NIKTO", setting.get("NIKTO", "off")),
+        ("ZAPROXY", setting.get("ZAPROXY", "off")),
+        ("METASPLOIT", setting.get("METASPLOIT", "off")),
+        ("WHOİS", setting.get("WHOİS", "off"))
     ]
 
     for name, value in checks:
@@ -75,14 +79,20 @@ def check_settings():
         else:
             print(f"{Fore.YELLOW}[!] {name} bilinmeyen durumda: {value}{Style.RESET_ALL}")
 
-    print("[*] Diğer ayarlar setting.py'den alındı.")
+    print("[*] Diğer ayarlar setting.json'dan alındı.")
 
 def check_conflicts():
-    if setting.FAST_SCAN.lower() == "on" and setting.FULL_SCAN.lower() == "on":
+    if setting.get("FAST_SCAN", "off").lower() == "on" and setting.get("FULL_SCAN", "off").lower() == "on":
         print_error_and_exit("FAST ve FULL parametreleri aynı anda kullanılamaz.")
 
-    if setting.FULL_SCAN.lower() == "on":
-        for scanner in [setting.SQLMAP, setting.WPSCAN, setting.NIKTO, setting.ZAPROXY, setting.METASPLOIT]:
+    if setting.get("FULL_SCAN", "off").lower() == "on":
+        for scanner in [
+            setting.get("SQLMAP", "off"), 
+            setting.get("WPSCAN", "off"), 
+            setting.get("NIKTO", "off"), 
+            setting.get("ZAPROXY", "off"), 
+            setting.get("METASPLOIT", "off")
+        ]:
             if scanner.lower() == "on":
                 print_error_and_exit("FULL ile diğer tarama modları aynı anda kullanılamaz.")
 
@@ -144,10 +154,10 @@ def run_dork_scan():
 
     targets = []
 
-    if setting.DORK:
-        targets = dork_search(driver, setting.DORK, num_results=20)
-    elif setting.DORK_INPUT:
-        with open(setting.DORK_INPUT, "r", encoding="utf-8") as f:
+    if setting.get("DORK"):
+        targets = dork_search(driver, setting.get("DORK"), num_results=20)
+    elif setting.get("DORK_INPUT"):
+        with open(setting.get("DORK_INPUT"), "r", encoding="utf-8") as f:
             dork_queries = f.read().splitlines()
         for query in dork_queries:
             found = dork_search(driver, query, num_results=10)
@@ -181,17 +191,17 @@ def run_panelfinder():
     print(f"{Fore.CYAN}[+] Panel bulucu çalıştırılıyor...{Style.RESET_ALL}")
     panels = ["/admin", "/panel", "/admin/login.php", "/cpanel", "/login", "/administrator"]
     for panel in panels:
-        full_url = f"{setting.TARGET}{panel}"
+        full_url = f"{setting.get('TARGET')}{panel}"
         print(f"Denetlenen: {full_url}")
 
 def run_sqlmap():
     print(f"{Fore.CYAN}[+] SQLMAP taraması başlatılıyor...{Style.RESET_ALL}")
-    level = int(setting.LEVEL)
+    level = int(setting.get("LEVEL", 1))
     risk = 1 if level <= 2 else (2 if level <= 4 else 3)
     depth = level if level <= 5 else 5
-    command = ["sqlmap", "-u", setting.TARGET, "--level", str(level), "--risk", str(risk), "--depth", str(depth), "--batch"]
+    command = ["sqlmap", "-u", setting.get("TARGET"), "--level", str(level), "--risk", str(risk), "--depth", str(depth), "--batch"]
 
-    if setting.RANDOM_AGENT.lower() == "on":
+    if setting.get("RANDOM_AGENT", "off").lower() == "on":
         user_agent = get_random_useragent()
         command += ["--user-agent", user_agent]
 
@@ -199,36 +209,36 @@ def run_sqlmap():
 
 def run_wpscan():
     print(f"{Fore.CYAN}[+] WPSCAN taraması başlatılıyor...{Style.RESET_ALL}")
-    command = ["wpscan", "--url", setting.TARGET, "--disable-tls-checks"]
-    if setting.RANDOM_AGENT.lower() == "on":
+    command = ["wpscan", "--url", setting.get("TARGET"), "--disable-tls-checks"]
+    if setting.get("RANDOM_AGENT", "off").lower() == "on":
         user_agent = get_random_useragent()
         command += ["--user-agent", user_agent]
     subprocess.run(command)
 
 def run_nikto():
     print(f"{Fore.CYAN}[+] NIKTO taraması başlatılıyor...{Style.RESET_ALL}")
-    command = ["nikto", "-h", setting.TARGET]
-    if setting.RANDOM_AGENT.lower() == "on":
+    command = ["nikto", "-h", setting.get("TARGET")]
+    if setting.get("RANDOM_AGENT", "off").lower() == "on":
         user_agent = get_random_useragent()
         command += ["-useragent", user_agent]
     subprocess.run(command)
 
 def run_zaproxy():
     print(f"{Fore.CYAN}[+] OWASP ZAP taraması başlatılıyor...{Style.RESET_ALL}")
-    command = ["zap-cli", "quick-scan", "--self-contained", setting.TARGET]
-    if setting.RANDOM_AGENT.lower() == "on":
+    command = ["zap-cli", "quick-scan", "--self-contained", setting.get("TARGET")]
+    if setting.get("RANDOM_AGENT", "off").lower() == "on":
         user_agent = get_random_useragent()
         command += ["--user-agent", user_agent]
     subprocess.run(command)
 
 def run_metasploit():
     print(f"{Fore.CYAN}[+] METASPLOIT taraması başlatılıyor...{Style.RESET_ALL}")
-    command = ["msfconsole", "-q", "-x", f"use auxiliary/scanner/http/http_version; set RHOSTS {setting.TARGET}; run; exit"]
+    command = ["msfconsole", "-q", "-x", f"use auxiliary/scanner/http/http_version; set RHOSTS {setting.get('TARGET')}; run; exit"]
     subprocess.run(command)
 
 def run_whois():
     print(f"{Fore.CYAN}[+] WHOIS taraması başlatılıyor...{Style.RESET_ALL}")
-    command = ["whois", setting.TARGET]
+    command = ["whois", setting.get("TARGET")]
     try:
         result = subprocess.run(command, capture_output=True, text=True, check=True)
         print(f"{Fore.GREEN}[+] WHOIS Sonuçları:\n{result.stdout}{Style.RESET_ALL}")
@@ -250,7 +260,7 @@ def run_full_scan():
         "METASPLOIT": run_metasploit
     }
     for name, func in scan_funcs.items():
-        if getattr(setting, name).lower() == "on":
+        if setting.get(name, "off").lower() == "on":
             thread = threading.Thread(target=func)
             threads.append(thread)
             thread.start()
@@ -259,20 +269,20 @@ def run_full_scan():
         thread.join()
 
 def işlem_sıralama():
-    if setting.DORK.lower() == "on":
+    if setting.get("DORK", "off").lower() == "on":
         time_tracker("Dork Tarama", 120)
         run_dork_scan()
-    elif setting.FULL_SCAN.lower() == "on":
+    elif setting.get("FULL_SCAN", "off").lower() == "on":
         time_tracker("FULL Tarama", 600)
         run_full_scan()
     else:
         scans = [
-            (setting.SQLMAP, run_sqlmap, "SQLMAP"),
-            (setting.WPSCAN, run_wpscan, "WPSCAN"),
-            (setting.NIKTO, run_nikto, "NIKTO"),
-            (setting.ZAPROXY, run_zaproxy, "ZAPROXY"),
-            (setting.METASPLOIT, run_metasploit, "METASPLOIT")
-            (setting.WHOİS, run_whois, "WHOİS")
+            (setting.get("SQLMAP", "off"), run_sqlmap, "SQLMAP"),
+            (setting.get("WPSCAN", "off"), run_wpscan, "WPSCAN"),
+            (setting.get("NIKTO", "off"), run_nikto, "NIKTO"),
+            (setting.get("ZAPROXY", "off"), run_zaproxy, "ZAPROXY"),
+            (setting.get("METASPLOIT", "off"), run_metasploit, "METASPLOIT"),
+            (setting.get("WHOİS", "off"), run_whois, "WHOİS")
         ]
         for active, func, name in scans:
             if active.lower() == "on":
@@ -289,4 +299,7 @@ if __name__ == "__main__":
     işlem_sıralama()
     if driver:
         driver.quit()
-    run_sqli_shell()
+    try:
+        run_sqli_shell()
+    except FileNotFoundError:
+        print(f"{Fore.RED}[!] SQL sonuç dosyası bulunamadı. SQL taraması yapılmadı.{Style.RESET_ALL}")
