@@ -1,10 +1,24 @@
 import argparse
+import json
 import os
 import subprocess
 import sys
 from colorama import Fore, Style
 
 SETTINGS_FILE = "config/setting.py"
+
+def load_settings():
+    if os.path.exists(SETTINGS_FILE):
+        with open(SETTINGS_FILE, "r", encoding="utf-8") as f:
+            try:
+                return json.load(f)
+            except json.JSONDecodeError:
+                return {}
+    return {}
+
+def save_settings(settings):
+    with open(SETTINGS_FILE, "w", encoding="utf-8") as f:
+        json.dump(settings, f, indent=4, ensure_ascii=False)
 
 def banner():
     print(r"""
@@ -76,60 +90,22 @@ def help_menu():
     """)
 
 def target(target_value):
-    updated_lines = []
-
-    if not os.path.exists(SETTINGS_FILE):
-        print(f"[!] Hata: Ayar dosyası bulunamadı: {SETTINGS_FILE}")
-        return
-
-    with open(SETTINGS_FILE, "r", encoding="utf-8") as f:
-        for line in f:
-            if not line.strip().startswith("TARGET"):
-                updated_lines.append(line)
-
-    updated_lines.append(f'TARGET = "{target_value}"\n')
-
-    with open(SETTINGS_FILE, "w", encoding="utf-8") as f:
-        f.writelines(updated_lines)
-
+    settings = load_settings()
+    settings["TARGET"] = target_value
+    save_settings(settings)
     print(f"[+] TARGET güncellendi: {target_value}")
 
+def target_check(is_enabled):
+
 def target_input(file_path):
-    updated_lines = []
-    found = False
+    settings = load_settings()
     file_name = os.path.basename(file_path)
-
-    if not os.path.exists(SETTINGS_FILE):
-        print(f"[!] Hata: Ayar dosyası bulunamadı: {SETTINGS_FILE}")
-        print(f"[!] Lütfen hatayı düzeltin ve tekrar deneyin")
-        return
-
-    with open(SETTINGS_FILE, "r") as f:
-        for line in f:
-            if line.startswith("TARGET_FILE_PATH"):
-                updated_lines.append(f'TARGET_FILE_PATH = "{file_path}"\n')
-                found = True
-            else:
-                updated_lines.append(line)
-
-    if not found:
-        updated_lines.append(f'TARGET_FILE_PATH = "{file_path}"\n')
-
-    with open(SETTINGS_FILE, "w") as f:
-        f.writelines(updated_lines)
-
+    settings["TARGET_FILE_PATH"] = file_path
+    save_settings(settings)
     print(f"[+] TARGET_FILE_PATH update edildi : {file_path}")
     print(f"[+] File name: {file_name}")
 
 def level(lv):
-    print(f"[+] Seviye: {lv}")
-    updated_lines = []
-    found = False
-
-    if not os.path.exists(SETTINGS_FILE):
-        print(f"[!] Hata: Ayar dosyası bulunamadı: {SETTINGS_FILE}")
-        return
-
     try:
         lv = int(lv)
         if lv < 1 or lv > 5:
@@ -139,21 +115,11 @@ def level(lv):
         print("[!] Seviye bir sayı olmalıdır.")
         return
 
-    with open(SETTINGS_FILE, "r") as f:
-        for line in f:
-            if line.startswith("LEVEL"):
-                updated_lines.append(f"LEVEL = {lv}\n")
-                found = True
-            else:
-                updated_lines.append(line)
-
-    if not found:
-        updated_lines.append(f"LEVEL = {lv}\n")
-
-    with open(SETTINGS_FILE, "w") as f:
-        f.writelines(updated_lines)
-
+    settings = load_settings()
+    settings["LEVEL"] = lv
+    save_settings(settings)
     print(f"[+] LEVEL güncellendi: {lv}")
+
 
 def set_fast_scan_mode(is_enabled):
     mode = "on" if is_enabled else "off"
@@ -262,22 +228,25 @@ def scan_xxs():
     print("[*] XXS taraması başlatıldı...")
 
 def use_sqlmap(is_enabled):
-    updated_lines = []
+
     mode = "on" if is_enabled else "off"
 
-    if not os.path.exists(SETTINGS_FILE):
-        print(f"[!] Hata: Ayar dosyası bulunamadı: {SETTINGS_FILE}")
-        return
+    # Dosya varsa oku, yoksa boş sözlük başlat
+    if os.path.exists(SETTINGS_FILE):
+        with open(SETTINGS_FILE, "r", encoding="utf-8") as f:
+            try:
+                settings = json.load(f)
+            except json.JSONDecodeError:
+                settings = {}
+    else:
+        settings = {}
 
-    with open(SETTINGS_FILE, "r", encoding="utf-8") as f:
-        for line in f:
-            if not line.strip().startswith("SQLMAP"):
-                updated_lines.append(line)
+    # SQLMAP modunu güncelle
+    settings["SQLMAP"] = mode
 
-    updated_lines.append(f'SQLMAP = "{mode}"\n')
-
+    # JSON dosyasına yaz
     with open(SETTINGS_FILE, "w", encoding="utf-8") as f:
-        f.writelines(updated_lines)
+        json.dump(settings, f, indent=4, ensure_ascii=False)
 
     print(f"[+] SQLMAP modu güncellendi: {mode}")
 
@@ -286,120 +255,125 @@ def run_use_sqlmap():
 
 def use_nmap(is_enabled):
     mode = "on" if is_enabled else "off"
-    print(f"[+] NMAP modu: {mode}")
-    updated_lines = []
-    found = False
-    if not os.path.exists(SETTINGS_FILE):
-        print(f"[!] Hata: Ayar dosyası bulunamadı: {SETTINGS_FILE}")
-        return
-    with open(SETTINGS_FILE, "r") as f:
-        for line in f:
-            if line.startswith("NMAP"):
-                updated_lines.append(f'NMAP = "{mode}"\n')
-                found = True
-            else:
-                updated_lines.append(line)
-    if not found:
-        updated_lines.append(f'NMAP = "{mode}"\n')
-    with open(SETTINGS_FILE, "w") as f:
-        f.writelines(updated_lines)
-    print(f"[+] NMAP ayarlanırken bir sorun çıkmadı mod :  {mode}")
+
+    # Dosya varsa oku, yoksa boş sözlük başlat
+    if os.path.exists(SETTINGS_FILE):
+        with open(SETTINGS_FILE, "r", encoding="utf-8") as f:
+            try:
+                settings = json.load(f)
+            except json.JSONDecodeError:
+                settings = {}
+    else:
+        settings = {}
+
+    # NMAP modunu güncelle
+    settings["NMAP"] = mode
+
+    # JSON dosyasına yaz
+    with open(SETTINGS_FILE, "w", encoding="utf-8") as f:
+        json.dump(settings, f, indent=4, ensure_ascii=False)
+
+    print(f"[+] NMAP modu güncellendi: {mode}")
 
 def run_use_nmap():
     print("[*] NMAP aracı kullanılacak !")
 
 def use_wpscan(is_enabled):
     mode = "on" if is_enabled else "off"
-    print(f"[+] WP-SCAN modu: {mode}")
-    updated_lines = []
-    found = False
-    if not os.path.exists(SETTINGS_FILE):
-        print(f"[!] Hata: Ayar dosyası bulunamadı: {SETTINGS_FILE}")
-        return
-    with open(SETTINGS_FILE, "r") as f:
-        for line in f:
-            if line.startswith("WPSCAN"):
-                updated_lines.append(f'WPSCAN = "{mode}"\n')
-                found = True
-            else:
-                updated_lines.append(line)
-    if not found:
-        updated_lines.append(f'WPSCAN = "{mode}"\n')
-    with open(SETTINGS_FILE, "w") as f:
-        f.writelines(updated_lines)
-    print(f"[+] WP-SCAN ayarlanırken bir sorun çıkmadı mod :  {mode}")
+
+    # Dosya varsa oku, yoksa boş sözlük başlat
+    if os.path.exists(SETTINGS_FILE):
+        with open(SETTINGS_FILE, "r", encoding="utf-8") as f:
+            try:
+                settings = json.load(f)
+            except json.JSONDecodeError:
+                settings = {}
+    else:
+        settings = {}
+
+    # NMAP modunu güncelle
+    settings["WPSCAN"] = mode
+
+    # JSON dosyasına yaz
+    with open(SETTINGS_FILE, "w", encoding="utf-8") as f:
+        json.dump(settings, f, indent=4, ensure_ascii=False)
+
+    print(f"[+] WPSCAN modu güncellendi: {mode}")
 
 def run_use_wpscan():
     print("[*] WP-SCAN aracı kullanılacak !")
 
 def use_nikto(is_enabled):
     mode = "on" if is_enabled else "off"
-    print(f"[+] NİKTO modu: {mode}")
-    updated_lines = []
-    found = False
-    if not os.path.exists(SETTINGS_FILE):
-        print(f"[!] Hata: Ayar dosyası bulunamadı: {SETTINGS_FILE}")
-        return
-    with open(SETTINGS_FILE, "r") as f:
-        for line in f:
-            if line.startswith("NIKTO"):
-                updated_lines.append(f'NIKTO = "{mode}"\n')
-                found = True
-            else:
-                updated_lines.append(line)
-    if not found:
-        updated_lines.append(f'NIKTO = "{mode}"\n')
-    with open(SETTINGS_FILE, "w") as f:
-        f.writelines(updated_lines)
-    print(f"[+] NİKTO ayarlanırken bir sorun çıkmadı mod :  {mode}")
+
+    # Dosya varsa oku, yoksa boş sözlük başlat
+    if os.path.exists(SETTINGS_FILE):
+        with open(SETTINGS_FILE, "r", encoding="utf-8") as f:
+            try:
+                settings = json.load(f)
+            except json.JSONDecodeError:
+                settings = {}
+    else:
+        settings = {}
+
+    # NMAP modunu güncelle
+    settings["NIKTO"] = mode
+
+    # JSON dosyasına yaz
+    with open(SETTINGS_FILE, "w", encoding="utf-8") as f:
+        json.dump(settings, f, indent=4, ensure_ascii=False)
+
+    print(f"[+] NİKTO modu güncellendi: {mode}")
 
 def run_use_nikto():
     print("[*] Nikto aracı kullanılacak !")
 
 def use_zaproxy(is_enabled):
     mode = "on" if is_enabled else "off"
-    print(f"[+] ZAPROXY modu: {mode}")
-    updated_lines = []
-    found = False
-    if not os.path.exists(SETTINGS_FILE):
-        print(f"[!] Hata: Ayar dosyası bulunamadı: {SETTINGS_FILE}")
-        return
-    with open(SETTINGS_FILE, "r") as f:
-        for line in f:
-            if line.startswith("ZAPROXY"):
-                updated_lines.append(f'ZAPROXY = "{mode}"\n')
-                found = True
-            else:
-                updated_lines.append(line)
-    if not found:
-        updated_lines.append(f'ZAPROXY = "{mode}"\n')
-    with open(SETTINGS_FILE, "w") as f:
-        f.writelines(updated_lines)
-    print(f"[+] ZAPROXY ayarlanırken bir sorun çıkmadı mod :  {mode}")
+
+    # Dosya varsa oku, yoksa boş sözlük başlat
+    if os.path.exists(SETTINGS_FILE):
+        with open(SETTINGS_FILE, "r", encoding="utf-8") as f:
+            try:
+                settings = json.load(f)
+            except json.JSONDecodeError:
+                settings = {}
+    else:
+        settings = {}
+
+    # NMAP modunu güncelle
+    settings["ZAPROXY"] = mode
+
+    # JSON dosyasına yaz
+    with open(SETTINGS_FILE, "w", encoding="utf-8") as f:
+        json.dump(settings, f, indent=4, ensure_ascii=False)
+
+    print(f"[+] ZAPROXY modu güncellendi: {mode}")
 
 def run_use_zaproxy():
     print("[*] ZAPROXY (OWASP) aracı kullanılacak !")
 
 def use_metasploit(is_enabled):
     mode = "on" if is_enabled else "off"
-    print(f"[+] METASPLOİT modu: {mode}")
-    updated_lines = []
-    found = False
-    if not os.path.exists(SETTINGS_FILE):
-        print(f"[!] Hata: Ayar dosyası bulunamadı: {SETTINGS_FILE}")
-        return
-    with open(SETTINGS_FILE, "r") as f:
-        for line in f:
-            if line.startswith("METASPLOIT"):
-                updated_lines.append(f'METASPLOIT = "{mode}"\n')
-                found = True
-            else:
-                updated_lines.append(line)
-    if not found:
-        updated_lines.append(f'METASPLOIT = "{mode}"\n')
-    with open(SETTINGS_FILE, "w") as f:
-        f.writelines(updated_lines)
-    print(f"[+] METASPLOİT ayarlanırken bir sorun çıkmadı mod :  {mode}")
+
+    # Dosya varsa oku, yoksa boş sözlük başlat
+    if os.path.exists(SETTINGS_FILE):
+        with open(SETTINGS_FILE, "r", encoding="utf-8") as f:
+            try:
+                settings = json.load(f)
+            except json.JSONDecodeError:
+                settings = {}
+    else:
+        settings = {}
+
+    # NMAP modunu güncelle
+    settings["METASPLOIT"] = mode
+
+    # JSON dosyasına yaz
+    with open(SETTINGS_FILE, "w", encoding="utf-8") as f:
+        json.dump(settings, f, indent=4, ensure_ascii=False)
+
+    print(f"[+] METASPLOİT modu güncellendi: {mode}")
 
 def run_use_metasploit():
     print("[*] METASPLOİT aracı kullanılacak !")
@@ -409,49 +383,47 @@ def run_use_whois():
 
 def use_whois(is_enabled):
     mode = "on" if is_enabled else "off"
-    print(f"[+] WHOİS modu: {mode}")
-    updated_lines = []
-    found = False
-    if not os.path.exists(SETTINGS_FILE):
-        print(f"[!] Hata: Ayar dosyası bulunamadı: {SETTINGS_FILE}")
-        return
-    with open(SETTINGS_FILE, "r") as f:
-        for line in f:
-            if line.startswith("WHOİS"):
-                updated_lines.append(f'WHOİS = "{mode}"\n')
-                found = True
-            else:
-                updated_lines.append(line)
-    if not found:
-        updated_lines.append(f'WHOİS = "{mode}"\n')
-    with open(SETTINGS_FILE, "w") as f:
-        f.writelines(updated_lines)
-    print(f"[+] WHOİS ayarlanırken bir sorun çıkmadı mod :  {mode}")
+
+    # Dosya varsa oku, yoksa boş sözlük başlat
+    if os.path.exists(SETTINGS_FILE):
+        with open(SETTINGS_FILE, "r", encoding="utf-8") as f:
+            try:
+                settings = json.load(f)
+            except json.JSONDecodeError:
+                settings = {}
+    else:
+        settings = {}
+
+    # NMAP modunu güncelle
+    settings["WHOIS"] = mode
+
+    # JSON dosyasına yaz
+    with open(SETTINGS_FILE, "w", encoding="utf-8") as f:
+        json.dump(settings, f, indent=4, ensure_ascii=False)
+
+    print(f"[+] WHOİS modu güncellendi: {mode}")
 
 def report(report_type):
-    print(f"[*] Rapor tipi: {report_type}")
-    updated_lines = []
-    found = False
+    print(f"[*] Rapor mode: {report_type}")
 
-    if not os.path.exists(SETTINGS_FILE):
-        print(f"[!] Hata: Ayar dosyası bulunamadı: {SETTINGS_FILE}")
-        return
-    
-    with open(SETTINGS_FILE, "r", encoding="utf-8") as f:
-        for line in f:
-            if line.strip().startswith("REPORT_TYPE"):
-                updated_lines.append(f'REPORT_TYPE = "{report_type}"\n')
-                found = True
-            else:
-                updated_lines.append(line)
+    # JSON dosyasını oku (varsa)
+    if os.path.exists(SETTINGS_FILE):
+        with open(SETTINGS_FILE, "r", encoding="utf-8") as f:
+            try:
+                settings = json.load(f)
+            except json.JSONDecodeError:
+                settings = {}
+    else:
+        settings = {}
 
-    if not found:
-        updated_lines.append(f'REPORT_TYPE = "{report_type}"\n')
+    # REPORT_TYPE değerini güncelle
+    settings["REPORT_TYPE"] = report_type
 
+    # JSON dosyasına yaz
     with open(SETTINGS_FILE, "w", encoding="utf-8") as f:
-        f.writelines(updated_lines)
+        json.dump(settings, f, indent=4, ensure_ascii=False)
 
-    print(f"[+] Rapor tipi ayarlandı: {report_type}")
+    print(f"[+] Rapor mode ayarlandı: {report_type}")
 
 def use_tor():
     print_error_and_exit("[*] Tor şuanlık kullanılamıyor... \n [*] lütfen TOR parametresini kullanmayınız!")
@@ -459,31 +431,27 @@ def use_tor():
 def use_random_agent():
     print("[+] random agent kullanılıcak")
 
-def set_random_agent_mode(is_enabled):
+def use_random_agent_mode(is_enabled):
     mode = "on" if is_enabled else "off"
-    print(f"[+] RANDOM_AGENT modu: {mode}")
-    updated_lines = []
-    found = False
 
-    if not os.path.exists(SETTINGS_FILE):
-        print(f"[!] Hata: Ayar dosyası bulunamadı: {SETTINGS_FILE}")
-        return
+    # Dosya varsa oku, yoksa boş sözlük başlat
+    if os.path.exists(SETTINGS_FILE):
+        with open(SETTINGS_FILE, "r", encoding="utf-8") as f:
+            try:
+                settings = json.load(f)
+            except json.JSONDecodeError:
+                settings = {}
+    else:
+        settings = {}
 
-    with open(SETTINGS_FILE, "r") as f:
-        for line in f:
-            if line.startswith("RANDOM_AGENT"):
-                updated_lines.append(f'RANDOM_AGENT = "{mode}"\n')
-                found = True
-            else:
-                updated_lines.append(line)
+    # NMAP modunu güncelle
+    settings["RANDOM_AGENT"] = mode
 
-    if not found:
-        updated_lines.append(f'RANDOM_AGENT = "{mode}"\n')
+    # JSON dosyasına yaz
+    with open(SETTINGS_FILE, "w", encoding="utf-8") as f:
+        json.dump(settings, f, indent=4, ensure_ascii=False)
 
-    with open(SETTINGS_FILE, "w") as f:
-        f.writelines(updated_lines)
-
-    print(f"[+] RANDOM_AGENT ayarlanırken bir sorun çıkmadı mod :  {mode}")
+    print(f"[+] RANDOM AGENT modu güncellendi: {mode}")
 
 def print_error_and_exit(message):
     print(f"{Fore.RED}HATA: {message}{Style.RESET_ALL}")
