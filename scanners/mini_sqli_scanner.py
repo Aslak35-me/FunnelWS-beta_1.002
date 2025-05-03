@@ -10,10 +10,13 @@ import colorama
 from colorama import init, Fore, Style
 from tools import useragent # type: ignore
 from tools import colorprint # type: ignore
-import config.setting as setting
 from settings import TARGET_FILE_PATH, TARGET, TARGET_FILE_CHECK # type: ignore
 
 init(autoreset=True)
+
+# setting.json dosyasını oku
+with open(os.path.join(os.path.dirname(__file__), 'config', 'setting.json'), 'r', encoding='utf-8') as f:
+    setting = json.load(f)
 
 # Global variables
 vulnerable = []
@@ -24,7 +27,7 @@ scan_stats = {
     'start_time': time.time(),
     'errors': 0
 }
-request_timeout = 20
+request_timeout = setting.get('request_timeout', 20)
 
 # Directory and file paths
 SCAN_RESULTS_DIR = "scan_results"
@@ -408,7 +411,7 @@ def get_targets():
     """Get targets based on settings"""
     targets = []
     
-    if TARGET_FILE_CHECK.lower() == "on":
+    if setting.get('TARGET_FILE_CHECK', 'off').lower() == "on":
         if os.path.exists(TARGET_FILE_PATH):
             with open(TARGET_FILE_PATH, 'r') as f:
                 targets = [line.strip() for line in f if line.strip()]
@@ -416,10 +419,10 @@ def get_targets():
             colorprint.colorprint(f"Target file not found: {TARGET_FILE_PATH}", "e")
             exit(1)
     else:
-        if TARGET:
-            targets = [TARGET]
+        if setting.get('TARGET'):
+            targets = [setting.get('TARGET')]
         else:
-            colorprint.colorprint("No target specified in settings.py", "e")
+            colorprint.colorprint("No target specified in setting.json", "e")
             exit(1)
     
     return targets
@@ -433,7 +436,7 @@ def VulnMain():
     colorprint.colorprint(f"Starting scan of {len(targets)} targets", "i")
     
     # Using ThreadPoolExecutor for better thread management
-    with ThreadPoolExecutor(max_workers=10) as executor:
+    with ThreadPoolExecutor(max_workers=setting.get('max_workers', 10)) as executor:
         executor.map(VulnCheck, targets)
     
     # Save results

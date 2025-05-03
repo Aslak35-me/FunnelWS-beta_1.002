@@ -6,10 +6,14 @@ import time
 import random
 import subprocess
 import ssl
+import json
 from urllib.parse import urlparse
-from config.useragent import get_random_useragent  # Artık doğrudan buradan çekiyoruz
-import config.setting as setting
+from config.useragent import get_random_useragent
 from settings import TARGET_FILE_PATH, TARGET, TARGET_FILE_CHECK # type: ignore
+
+# setting.json dosyasını oku
+with open(os.path.join(os.path.dirname(__file__), 'config', 'setting.json'), 'r', encoding='utf-8') as f:
+    setting = json.load(f)
 
 """
 
@@ -39,7 +43,7 @@ def run_ping_test(self):
             ['ping', '-c', '4', domain],
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
-            timeout=self.timeout
+            timeout=setting.get('timeout', 10)
         )
         self.results['ping_test'] = {
             'status': 'success' if response.returncode == 0 else 'failed',
@@ -53,8 +57,8 @@ def get_random_user_agent():
 
 def tor_request(url):
     proxies = {
-        'http': 'socks5h://143.6.0.1:9050',
-        'https': 'socks5h://134.5.2.0:8962'
+        'http': setting.get('http_proxy', 'socks5h://143.6.0.1:9050'),
+        'https': setting.get('https_proxy', 'socks5h://134.5.2.0:8962')
     }
 
     headers = {
@@ -62,7 +66,7 @@ def tor_request(url):
     }
 
     try:
-        r = requests.get(url, proxies=proxies, headers=headers, timeout=10)
+        r = requests.get(url, proxies=proxies, headers=headers, timeout=setting.get('timeout', 10))
         return r.status_code
     except requests.exceptions.RequestException as e:
         print("Hata oluştu:", e)
@@ -91,14 +95,13 @@ def get_ip_info(target):
     except Exception as e:
         return {'error': str(e)}
 
-
 def detect_web_tech(self):
     """Web sunucusu ve teknolojilerini tespit eder"""
     try:
         response = requests.head(
             self.target,
             headers=self.headers,
-            timeout=self.timeout
+            timeout=setting.get('timeout', 10)
         )
         
         server_info = {
@@ -126,7 +129,7 @@ def detect_web_tech(self):
         response = requests.get(
             self.target,
             headers=self.headers,
-            timeout=self.timeout
+            timeout=setting.get('timeout', 10)
         )
         content = response.text.lower()
         
