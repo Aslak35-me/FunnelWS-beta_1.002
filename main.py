@@ -417,6 +417,7 @@ def clear_console():
     os.system('cls' if current_os == "Windows" else 'clear')
 
 def start():
+    clear_console()
     banner()
     print("[*]\t starter başlatılıyor")
     subprocess.run(["python3", "starter.py"])
