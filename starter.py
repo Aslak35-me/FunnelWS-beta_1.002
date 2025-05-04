@@ -249,6 +249,22 @@ def run_whois():
     except subprocess.CalledProcessError as e:
         print(f"{Fore.RED}[!] WHOIS komutu çalıştırılırken hata oluştu: {e}{Style.RESET_ALL}")
 
+def run_autoreconx():
+    script_path = os.path.join("scanners", "AutoReconX.sh")
+
+    if not os.path.isfile(script_path):
+        print(f"[!] Betik bulunamadı: {script_path}")
+        return
+
+    try:
+        print("[*] AutoReconX.sh başlatılıyor...\n")
+        subprocess.run(["bash", script_path], check=True)
+        print("\n✅ Tarama tamamlandı.")
+    except subprocess.CalledProcessError as e:
+        print(f"[!] Betik çalıştırılırken hata oluştu: {e}")
+    except Exception as ex:
+        print(f"[!] Genel hata: {ex}")
+    
 def run_full_scan():
     print(f"{Fore.CYAN}[+] FULL tarama başlatılıyor...{Style.RESET_ALL}")
     threads = []
@@ -296,6 +312,7 @@ if __name__ == "__main__":
     check_settings()
     check_conflicts()
     driver = start_browser()
+    run_autoreconx()
     işlem_sıralama()
     if driver:
         driver.quit()
