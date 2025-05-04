@@ -13,7 +13,8 @@ from selenium import webdriver
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.service import Service
-from webdriver_manager.chrome import ChromeDriverManager 
+from webdriver_manager.chrome import ChromeDriverManager
+from webdriver_manager.core.utils import ChromeType
 
 # colorama başlat
 init(autoreset=True)
@@ -105,9 +106,21 @@ def start_browser():
     options = webdriver.ChromeOptions()
     user_agent = get_random_useragent()
     options.add_argument(f"user-agent={user_agent}")
-    options.add_argument("--headless")
-    driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
-    return driver
+    options.add_argument("--headless=new")
+    options.add_argument("--disable-gpu")
+    options.add_argument("--no-sandbox")
+    options.add_argument("--disable-dev-shm-usage")
+    options.add_argument("--log-level=3")
+    options.add_experimental_option("excludeSwitches", ["enable-logging"])
+
+    try:
+        driver_path = ChromeDriverManager(chrome_type=ChromeType.GOOGLE).install()
+        service = Service(driver_path)
+        driver_instance = webdriver.Chrome(service=service, options=options)
+        return driver_instance
+    except Exception as e:
+        print(f"{Fore.RED}[!] Chrome başlatılırken hata oluştu: {e}{Style.RESET_ALL}")
+        sys.exit(1)
 
 def dork_search(driver, query, engines=['google', 'bing'], num_results=10):
     print(f"[+] {query} için dork araması başlatılıyor...")
