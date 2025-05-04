@@ -4,6 +4,7 @@ import os
 import subprocess
 import sys
 from colorama import Fore, Style
+import platform
 
 SETTINGS_FILE = "config/setting.py"
 
