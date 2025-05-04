@@ -6,7 +6,7 @@ import sys
 from colorama import Fore, Style
 import platform
 
-SETTINGS_FILE = "config/setting.py"
+SETTINGS_FILE = "config/setting.json"
 
 def load_settings():
     if os.path.exists(SETTINGS_FILE):
