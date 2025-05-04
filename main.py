@@ -411,12 +411,18 @@ def print_error_and_exit(message):
     input(f"{Fore.RED}HATA nedeniyle işlem sonlandırıldı. Programı kapatıp tekrar açınız.{Style.RESET_ALL}")
     sys.exit(1)
 
+def clear_console():
+    current_os = platform.system()
+    os.system('cls' if current_os == "Windows" else 'clear')
+
 def start():
     banner()
     print("[*]\t starter başlatılıyor")
     subprocess.run(["python3", "starter.py"])
 
 if __name__ == "__main__":
+    clear_console()
+    banner()
     parser = argparse.ArgumentParser(description="FunnelWS - Web Vulnerability Scanner", add_help=False)
 
     # Tüm argüman tanımları
