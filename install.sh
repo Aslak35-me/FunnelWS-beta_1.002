@@ -19,6 +19,7 @@ if [[ "$platform" == "Linux" ]]; then
     sudo apt update
     sudo apt install golang-go -y
     sudo apt install python3 python3-pip -y
+    
     if ! grep -q 'export PATH=$PATH:$(go env GOPATH)/bin' ~/.bashrc; then
     echo 'export PATH=$PATH:$(go env GOPATH)/bin' >> ~/.bashrc
     source ~/.bashrc
@@ -37,7 +38,7 @@ if [[ "$platform" == "Linux" ]]; then
     pip3 install colorama requests beautifulsoup4 selenium bs4 dnspython python-whois
     pip install selenium
     pip install webdriver-manager
-    
+
     # requirements.txt üzerinden kütüphanelerin kurulumu
     echo "[+] Gereken Python kütüphaneleri yükleniyor..."
     pip install -r requirements.txt
