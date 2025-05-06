@@ -197,8 +197,8 @@ def run_sqli_shell():
         subprocess.run(["sqlmap", "-u", url, "-v3", "--batch", "--threads=10", "--os-shell", "--output-dir=sql"])
 
 def run_mini_sqli_scanner():
-    print("[*]mini_sqli_scanner başlatılıyor")
-    print_error_and_exit("[*] mini_sqli_scanner şuanlık kullanılamıyor... \n [*] lütfen mini_sqli_scanner parametresini kullanmayınız!")
+    print("[*]\t mini sqli scanner başlatılıyor")
+    subprocess.run(["python3", os.path.join("scanners", "mini_sqli_scanner.py")])
 
 def run_panelfinder():
     print(f"{Fore.CYAN}[+] Panel bulucu çalıştırılıyor...{Style.RESET_ALL}")
