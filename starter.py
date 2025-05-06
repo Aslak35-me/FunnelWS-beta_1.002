@@ -324,12 +324,5 @@ if __name__ == "__main__":
     banner()
     check_settings()
     check_conflicts()
-    driver = start_browser()
     run_autoreconx()
     işlem_sıralama()
-    if driver:
-        driver.quit()
-    try:
-        run_sqli_shell()
-    except FileNotFoundError:
-        print(f"{Fore.RED}[!] SQL sonuç dosyası bulunamadı. SQL taraması yapılmadı.{Style.RESET_ALL}")
