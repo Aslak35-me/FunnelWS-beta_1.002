@@ -8,8 +8,7 @@ from concurrent.futures import ThreadPoolExecutor
 from urllib.parse import urlparse, urlsplit, urlunsplit, parse_qs, urlencode
 import colorama
 from colorama import init, Fore, Style
-from config import useragent
-from config import colorprint
+from config.useragent import get_random_useragent
 from settings import TARGET_FILE_PATH, TARGET, TARGET_FILE_CHECK # type: ignore
 
 import sys
@@ -352,7 +351,8 @@ def VulnCheck(url):
                         'timestamp': time.strftime("%Y-%m-%d %H:%M:%S")
                     }
                     vulnerable.append(result)
-                    colorprint.colorprint(
+                    colorprint()
+                    print(
                         f"Vulnerable: {url}\n"
                         f"Parameter: {param}\n"
                         f"Payload: {payload}\n"
@@ -368,7 +368,8 @@ def VulnCheck(url):
         
     except Exception as e:
         scan_stats['errors'] += 1
-        colorprint.colorprint(f"Error testing {url}: {str(e)}", "e")
+        colorprint()
+        print(f"Error testing {url}: {str(e)}", "e")
 
 def create_directories():
     """Create required directories if they don't exist"""
@@ -459,6 +460,31 @@ def VulnMain():
         f"Errors encountered: {scan_stats['errors']}",
         "i"
     )
+
+def colorprint():
+    
+    current_os = platform.system()
+    os.system('cls' if current_os == "Windows" else 'clear')
+
+logo = r"""
++----------------------------------------------------+
+|                                                    |
+|                                                    |
+|   _____                       ___        ______    |
+|  |  ___|   _ ____  ____   ___| \ \      / / ___|   |
+|  | |_ | | | | __ \| __ \ / _ \ |\ \ /\ / /\___ \   |
+|  |  _|| |_| | | | | | | |  __/ | \ V  V /  ___) |  |
+|  |_|   \____|_| |_|_| |_|\___|_|  \_/\_/  |____/   |
+|                                                    |
+|                                                    |
++----------------------------------------------------+
+"""
+
+print(Fore.RED + logo + Fore.RESET)
+print("[*]\tFunnelWS Web Vulnerability Scanner")
+print("[*]\tFunnelWS Version BETA_1.002\n")
+print("======================================================\n")
+
 
 if __name__ == "__main__":
     VulnMain()

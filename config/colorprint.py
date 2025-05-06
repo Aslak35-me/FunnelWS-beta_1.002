@@ -2,9 +2,9 @@ from colorama import Fore, Style
 import os
 import time
 
-def clear_console():
-        current_os = platform.system()
-        os.system('cls' if current_os == "Windows" else 'clear')
+
+current_os = platform.system()
+os.system('cls' if current_os == "Windows" else 'clear')
 
 logo = r"""
 +----------------------------------------------------+
