@@ -52,15 +52,22 @@ if [[ "$platform" == "Linux" ]]; then
     git clone https://github.com/wpscanteam/wpscan.git scanners/wpscan
     git clone https://github.com/novm/nikto.git scanners/nikto
     git clone https://github.com/rapid7/metasploit-framework.git scanners/metasploit
-    go install github.com/projectdiscovery/subfinder/v2/cmd/subfinder@latest
-    go install github.com/tomnomnom/assetfinder@latest
-    go install github.com/OWASP/Amass/v3/...@latest
-    go install github.com/projectdiscovery/httpx/cmd/httpx@latest
-    go install github.com/tomnomnom/waybackurls@latest
-    go install github.com/tomnomnom/gf@latest
-    go install github.com/hakluke/hakrawler@latest
-    go install github.com/tomnomnom/qsreplace@latest
-    pip install dirsearch nuclei getJS anew
+# Go tabanlı araçlar
+go install github.com/projectdiscovery/subfinder/v2/cmd/subfinder@latest
+go install github.com/owasp-amass/amass/v3/...@master
+go install github.com/projectdiscovery/dnsx/cmd/dnsx@latest
+go install github.com/projectdiscovery/httpx/cmd/httpx@latest
+go install github.com/lc/gau/v2/cmd/gau@latest
+go install github.com/003random/getJS@latest
+go install github.com/tomnomnom/gf@latest
+go install github.com/tomnomnom/qsreplace@latest
+go install github.com/projectdiscovery/nuclei/v2/cmd/nuclei@latest
+
+# Python tabanlı araç
+pip3 install dirsearch
+
+# Sistem paketi
+sudo apt install jq
 
     echo -e "${CYAN}======================================${RESET}"
     echo -e "${CYAN}Dizin yapısı oluşturuluyor...${RESET}"
