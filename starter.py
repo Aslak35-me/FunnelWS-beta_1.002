@@ -209,6 +209,7 @@ def run_panelfinder():
 
 def run_sqlmap():
     print(f"{Fore.CYAN}[+] SQLMAP taraması başlatılıyor...{Style.RESET_ALL}")
+    run_mini_sqli_scanner()
     level = int(setting.get("LEVEL", 1))
     risk = 1 if level <= 2 else (2 if level <= 4 else 3)
     depth = 1 if level <= 2 else (2 if level <= 4 else 3)
@@ -219,6 +220,7 @@ def run_sqlmap():
         command += ["--user-agent", user_agent]
 
     subprocess.run(command)
+    
 
 def run_wpscan():
     print(f"{Fore.CYAN}[+] WPSCAN taraması başlatılıyor...{Style.RESET_ALL}")

@@ -8,9 +8,17 @@ from concurrent.futures import ThreadPoolExecutor
 from urllib.parse import urlparse, urlsplit, urlunsplit, parse_qs, urlencode
 import colorama
 from colorama import init, Fore, Style
-from tools import useragent # type: ignore
-from tools import colorprint # type: ignore
+from config import useragent
+from config import colorprint
 from settings import TARGET_FILE_PATH, TARGET, TARGET_FILE_CHECK # type: ignore
+
+import sys
+import os
+
+# Proje kök dizinini Python'un modül arama yoluna ekle
+PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if PROJECT_ROOT not in sys.path:
+    sys.path.append(PROJECT_ROOT)
 
 init(autoreset=True)
 
