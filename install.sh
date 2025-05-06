@@ -47,11 +47,11 @@ if [[ "$platform" == "Linux" ]]; then
     echo -e "${CYAN}Güvenlik araçları indiriliyor...${RESET}"
     echo -e "${CYAN}======================================${RESET}"
     # Araçları GitHub'dan klonla
-    git clone https://github.com/sqlmapproject/sqlmap.git scanners/sql_injection/sqlmap
-    git clone https://github.com/OWASP/ZAP-ROXY.git scanners/zaproxy
-    git clone https://github.com/wpscanteam/wpscan.git scanners/wpscan
-    git clone https://github.com/novm/nikto.git scanners/nikto
-    git clone https://github.com/rapid7/metasploit-framework.git scanners/metasploit
+    # git clone https://github.com/sqlmapproject/sqlmap.git scanners/sql_injection/sqlmap
+    # git clone https://github.com/OWASP/ZAP-ROXY.git scanners/zaproxy
+    # git clone https://github.com/wpscanteam/wpscan.git scanners/wpscan
+    # git clone https://github.com/novm/nikto.git scanners/nikto
+    # git clone https://github.com/rapid7/metasploit-framework.git scanners/metasploit
 # Go tabanlı araçlar
 go install github.com/projectdiscovery/subfinder/v2/cmd/subfinder@latest
 go install github.com/owasp-amass/amass/v3/...@master
@@ -62,6 +62,7 @@ go install github.com/003random/getJS@latest
 go install github.com/tomnomnom/gf@latest
 go install github.com/tomnomnom/qsreplace@latest
 go install github.com/projectdiscovery/nuclei/v2/cmd/nuclei@latest
+
 
 # Python tabanlı araç
 pip3 install dirsearch
