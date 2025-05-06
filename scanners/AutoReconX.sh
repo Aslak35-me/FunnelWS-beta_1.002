@@ -2,7 +2,7 @@
 
 set -e
 
-CONFIG_PATH="config/settings.json"
+CONFIG_PATH="config/setting.json"
 OUTER_DIR="results"
 WORDLIST="${WORDLIST:-~/SecLists/Discovery/Web-Content/raft-medium-words.txt}"
 
