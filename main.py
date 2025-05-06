@@ -549,6 +549,6 @@ if __name__ == "__main__":
         report("pdf")
     if args.user_agent:
         use_random_agent()
-        set_random_agent_mode(True)  # "on" olarak ayarla
+        use_random_agent_mode(True)  # "on" olarak ayarla
     if args.start:
         start()

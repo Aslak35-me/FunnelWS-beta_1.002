@@ -59,7 +59,7 @@ def banner():
 def version():
     print("[*] FunnelWS Version BETA_1.002")
 
-def check_settings():
+def check_setting():
     checks = [
         ("FULL_SCAN", setting.get("FULL_SCAN", "off")),
         ("FAST_SCAN", setting.get("FAST_SCAN", "off")),
@@ -211,7 +211,7 @@ def run_sqlmap():
     print(f"{Fore.CYAN}[+] SQLMAP taraması başlatılıyor...{Style.RESET_ALL}")
     level = int(setting.get("LEVEL", 1))
     risk = 1 if level <= 2 else (2 if level <= 4 else 3)
-    depth = level if level <= 5 else 5
+    depth = 1 if level <= 2 else (2 if level <= 4 else 3)
     command = ["sqlmap", "-u", setting.get("TARGET"), "--level", str(level), "--risk", str(risk), "--depth", str(depth), "--batch"]
 
     if setting.get("RANDOM_AGENT", "off").lower() == "on":
@@ -322,7 +322,7 @@ def işlem_sıralama():
 if __name__ == "__main__":
     clear_console()
     banner()
-    check_settings()
+    check_setting()
     check_conflicts()
     run_autoreconx()
     işlem_sıralama()

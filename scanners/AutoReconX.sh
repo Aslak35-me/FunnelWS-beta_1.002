@@ -2,7 +2,13 @@
 
 set -e
 
-CONFIG_PATH="config/setting.json"
+# Renkli çıktılar için
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[0;33m'
+NC='\033[0m' # No Color
+
+CONFIG_PATH="$(dirname "$0")/../config/setting.json"
 OUTER_DIR="results"
 WORDLIST="${WORDLIST:-~/SecLists/Discovery/Web-Content/raft-medium-words.txt}"
 
@@ -15,7 +21,7 @@ TARGET_FILE_PATH=$(jq -r '.TARGET_FILE_PATH' "$CONFIG_PATH")
 targets=()
 
 if [[ "$TARGET_FILE_CHECK" == "on" ]]; then
-    echo "[*] Hedefler dosyadan okunuyor: $TARGET_FILE_PATH"
+    echo -e "${YELLOW}[*] Hedefler dosyadan okunuyor: $TARGET_FILE_PATH${NC}"
     while IFS= read -r line; do
         cleaned=$(echo "$line" | xargs)
         if [[ -n "$cleaned" ]]; then
@@ -23,35 +29,54 @@ if [[ "$TARGET_FILE_CHECK" == "on" ]]; then
         fi
     done < "$TARGET_FILE_PATH"
 else
-    echo "[*] Tek hedef kullanılacak: $TARGET"
+    echo -e "${YELLOW}[*] Tek hedef kullanılacak: $TARGET${NC}"
     targets+=("$TARGET")
 fi
+
+# Geliştirilmiş site kontrol fonksiyonu
+check_site_availability() {
+    local target=$1
+    local host=$(echo "$target" | sed -E 's#(https?://)?([^:/]+).*#\2#')
+    
+    # 1. Ping kontrolü (3 deneme, 2 saniye timeout)
+    if ping -c 3 -W 2 "$host" &>/dev/null; then
+        echo -e "${GREEN}[+] Ping başarılı: $host${NC}"
+        
+        # 2. HTTP/HTTPS erişim kontrolü (curl ile)
+        http_code=$(curl --max-time 10 -k -s -I -o /dev/null -w "%{http_code}" "$target" || true)
+        
+        if [[ "$http_code" =~ ^[23] ]]; then
+            echo -e "${GREEN}[+] HTTP erişimi başarılı: $target (Status: $http_code)${NC}"
+            return 0
+        else
+            echo -e "${RED}[-] HTTP erişimi başarısız: $target (Status: ${http_code:-"Connection failed"})${NC}"
+            return 1
+        fi
+    else
+        echo -e "${RED}[-] Ping başarısız: $host${NC}"
+        return 1
+    fi
+}
 
 # Aktif hedefleri kontrol et
 active_targets=()
 mkdir -p "$OUTER_DIR/logs"
 
-echo "[*] Canlı hedefler kontrol ediliyor..."
+echo -e "${YELLOW}[*] Canlı hedefler kontrol ediliyor...${NC}"
 for target in "${targets[@]}"; do
-    # Domain veya IP’ye ping
-    host=$(echo "$target" | sed -E 's#(https?://)?([^:/]+).*#\2#')
-    if ping -c 1 -W 1 "$host" &>/dev/null; then
-        # httpx ile 200 OK mi kontrol et
-        result=$(echo "$target" | httpx -silent -status-code)
-        if echo "$result" | grep -q "\[200\]"; then
-            echo "[+] Canlı: $target"
-            active_targets+=("$target")
-        else
-            echo "[-] HTTP kontrolü başarısız: $target"
-        fi
-    else
-        echo "[-] Ping başarısız: $target"
+    # Eğer http:// veya https:// yoksa ekle
+    if [[ ! "$target" =~ ^https?:// ]]; then
+        target="http://$target"
+    fi
+    
+    if check_site_availability "$target"; then
+        active_targets+=("$target")
     fi
 done
 
 # Hiçbir aktif hedef yoksa çık
 if [ ${#active_targets[@]} -eq 0 ]; then
-    echo "[!] Hiçbir aktif hedef bulunamadı. Çıkılıyor."
+    echo -e "${RED}[!] Hiçbir aktif hedef bulunamadı. Çıkılıyor.${NC}"
     exit 1
 fi
 
@@ -61,10 +86,10 @@ for target in "${active_targets[@]}"; do
     outdir="$OUTER_DIR/$domain"
     mkdir -p "$outdir"
 
-    echo "🔎 $target için tarama başlatılıyor..."
+    echo -e "${YELLOW}🔎 $target için tarama başlatılıyor...${NC}"
 
     ## Subdomain tarama
-    echo "[1] Subdomain tarama"
+    echo -e "${YELLOW}[1] Subdomain tarama${NC}"
     subfinder -d "$domain" -silent > "$outdir/subs.txt"
     assetfinder --subs-only "$domain" | anew "$outdir/subs.txt"
     amass enum -passive -d "$domain" | anew "$outdir/subs.txt"
@@ -73,38 +98,38 @@ for target in "${active_targets[@]}"; do
     dnsx -l "$outdir/subs.txt" -silent -a -o "$outdir/resolved_subs.txt"
 
     ## HTTP canlılık
-    echo "[2] HTTP canlılık testi"
+    echo -e "${YELLOW}[2] HTTP canlılık testi${NC}"
     httpx -l "$outdir/resolved_subs.txt" -silent -title -tech-detect -status-code > "$outdir/httpx_raw.txt"
     cut -d' ' -f1 "$outdir/httpx_raw.txt" > "$outdir/live.txt"
 
     ## Wayback endpoint
-    echo "[3] Wayback URL toplama"
+    echo -e "${YELLOW}[3] Wayback URL toplama${NC}"
     gau < "$outdir/live.txt" | grep -iE "\.php|\.aspx|\.jsp|\.json|\.js|=" | anew "$outdir/waybacks.txt"
 
     ## JS Linkleri
-    echo "[4] JavaScript linkleri toplama"
+    echo -e "${YELLOW}[4] JavaScript linkleri toplama${NC}"
     getJS --input "$outdir/live.txt" --output "$outdir/js_links.txt"
 
     ## XSS testi
-    echo "[5] XSS testi"
+    echo -e "${YELLOW}[5] XSS testi${NC}"
     gf xss < "$outdir/waybacks.txt" | qsreplace '"><script>alert(1)</script>' | httpx -silent -status-code -location > "$outdir/xss.txt"
 
     ## SQLi testi
-    echo "[6] SQLi testi"
+    echo -e "${YELLOW}[6] SQLi testi${NC}"
     gf sqli < "$outdir/waybacks.txt" | qsreplace "' OR '1'='1" | httpx -silent -status-code -location > "$outdir/sqli.txt"
 
     ## Nuclei
-    echo "[7] Nuclei taraması"
+    echo -e "${YELLOW}[7] Nuclei taraması${NC}"
     nuclei -l "$outdir/live.txt" -t cves/ -o "$outdir/nuclei-cves.txt"
     nuclei -l "$outdir/live.txt" -t exposures/ -t misconfiguration/ -t vulnerabilities/ -o "$outdir/nuclei-all.txt"
 
     ## Dirsearch
-    echo "[8] Dizin tarama"
+    echo -e "${YELLOW}[8] Dizin tarama${NC}"
     while IFS= read -r url; do
         dirsearch -u "$url" -e php,html,js,json,txt -w "$WORDLIST" --full-url -q -o "$outdir/dirsearch-${url//[:\/]/_}.txt"
     done < "$outdir/live.txt"
 
-    echo "✅ $target taraması tamamlandı. Çıktılar: $outdir"
+    echo -e "${GREEN}✅ $target taraması tamamlandı. Çıktılar: $outdir${NC}"
 done
 
-echo "🎉 Tüm hedefler AutoReconX ile başarıyla tarandı!"
+echo -e "${GREEN}🎉 Tüm hedefler AutoReconX ile başarıyla tarandı!${NC}"
