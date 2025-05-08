@@ -68,8 +68,8 @@ def check_setting():
         ("NIKTO", setting.get("NIKTO", "off")),
         ("ZAPROXY", setting.get("ZAPROXY", "off")),
         ("METASPLOIT", setting.get("METASPLOIT", "off")),
-        ("WHOİS", setting.get("WHOİS", "off"))
-        ("DORK_CHECK", setting.get("DORK_CHECK", "off"))
+        ("WHOİS", setting.get("WHOİS", "off")),
+        ("DORK_CHECK", setting.get("DORK_CHECK", "off")),
         ("DORK_FİLE_CHECK", setting.get("DORK_FİLE_CHECK", "off"))
     ]
 
@@ -220,7 +220,14 @@ def run_autoreconx():
     
 def run_full_scan():
     print(f"{Fore.CYAN}[+] FULL tarama başlatılıyor...{Style.RESET_ALL}")
-    threads = []
+
+    # Önce çakışmaları kontrol et
+    check_conflicts()
+
+    # AutoReconX taramasını başlat
+    run_autoreconx()
+
+    # Tarama araçlarını sıraya al
     scan_funcs = {
         "SQLMAP": run_sqlmap,
         "WPSCAN": run_wpscan,
@@ -228,45 +235,56 @@ def run_full_scan():
         "ZAPROXY": run_zaproxy,
         "METASPLOIT": run_metasploit
     }
+
+    # Thread'li olarak her aktif aracı çalıştır
+    threads = []
     for name, func in scan_funcs.items():
         if setting.get(name, "off").lower() == "on":
+            print(f"[*] {name} aktif, başlatılıyor...")
             thread = threading.Thread(target=func)
-            threads.append(thread)
             thread.start()
-            run_autoreconx()
+            threads.append(thread)
 
+    # Tüm thread'lerin tamamlanmasını bekle
     for thread in threads:
         thread.join()
 
+    print(f"{Fore.GREEN}[✓] FULL tarama tamamlandı.{Style.RESET_ALL}")
+
 def işlem_sıralama():
+    # Dork taramaları (varsa önce çalıştırılır)
     if setting.get("DORK_FİLE_CHECK", "off").lower() == "on":
-        time_tracker("Dork Tarama", 120)
+        time_tracker("Dork File Tarama", 120)
         run_dork_file_scan()
     elif setting.get("DORK_CHECK", "off").lower() == "on":
         time_tracker("Dork Tarama", 120)
         run_dork_scan()
-    elif setting.get("FULL_SCAN", "off").lower() == "on":
-        time_tracker("FULL Tarama", 600)
+
+    # Full Scan aktifse sadece full_scan çalıştırılır
+    if setting.get("FULL_SCAN", "off").lower() == "on":
         run_full_scan()
-    else:
-        scans = [
-            (setting.get("SQLMAP", "off"), run_sqlmap, "SQLMAP"),
-            (setting.get("WPSCAN", "off"), run_wpscan, "WPSCAN"),
-            (setting.get("NIKTO", "off"), run_nikto, "NIKTO"),
-            (setting.get("ZAPROXY", "off"), run_zaproxy, "ZAPROXY"),
-            (setting.get("METASPLOIT", "off"), run_metasploit, "METASPLOIT"),
-            (setting.get("WHOİS", "off"), run_whois, "WHOİS")
-        ]
-        for active, func, name in scans:
-            if active.lower() == "on":
-                time_tracker(f"{name} Tarama", 60)
-                func()
-            run_autoreconx()
+        return
+
+    # Full scan yoksa önce autoreconx çalıştırılır
+    run_autoreconx()
+
+    # Sonra hangi tarama araçları açıksa onlar sırasıyla çalıştırılır
+    if setting.get("SQLMAP", "off").lower() == "on":
+        run_sqlmap()
+    if setting.get("WPSCAN", "off").lower() == "on":
+        run_wpscan()
+    if setting.get("NIKTO", "off").lower() == "on":
+        run_nikto()
+    if setting.get("ZAPROXY", "off").lower() == "on":
+        run_zaproxy()
+    if setting.get("METASPLOIT", "off").lower() == "on":
+        run_metasploit()
+    if setting.get("WHOİS", "off").lower() == "on":
+        run_whois()
 # Ana Çalıştırıcı
 if __name__ == "__main__":
     clear_console()
     banner()
     check_setting()
     check_conflicts()
-    run_autoreconx()
     işlem_sıralama()
