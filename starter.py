@@ -69,6 +69,8 @@ def check_setting():
         ("ZAPROXY", setting.get("ZAPROXY", "off")),
         ("METASPLOIT", setting.get("METASPLOIT", "off")),
         ("WHOİS", setting.get("WHOİS", "off"))
+        ("DORK_CHECK", setting.get("DORK_CHECK", "off"))
+        ("DORK_FİLE_CHECK", setting.get("DORK_FİLE_CHECK", "off"))
     ]
 
     for name, value in checks:
@@ -102,51 +104,6 @@ def print_error_and_exit(message):
     input(f"{Fore.RED}Program sonlandırıldı. Enter'a basarak çıkabilirsiniz.{Style.RESET_ALL}")
     sys.exit(1)
 
-def start_browser():
-    options = webdriver.ChromeOptions()
-    user_agent = get_random_useragent()
-    options.add_argument(f"user-agent={user_agent}")
-    options.add_argument("--headless=new")
-    options.add_argument("--disable-gpu")
-    options.add_argument("--no-sandbox")
-    options.add_argument("--disable-dev-shm-usage")
-    options.add_argument("--log-level=3")
-    options.add_experimental_option("excludeSwitches", ["enable-logging"])
-
-    try:
-        driver_path = ChromeDriverManager(chrome_type=ChromeType.GOOGLE).install()
-        service = Service(driver_path)
-        driver_instance = webdriver.Chrome(service=service, options=options)
-        return driver_instance
-    except Exception as e:
-        print(f"{Fore.RED}[!] Chrome başlatılırken hata oluştu: {e}{Style.RESET_ALL}")
-        sys.exit(1)
-
-def dork_search(driver, query, engines=['google', 'bing'], num_results=10):
-    print(f"[+] {query} için dork araması başlatılıyor...")
-    results = []
-
-    for engine in engines:
-        if engine == 'google':
-            driver.get(f"https://www.google.com/search?q={query}")
-        elif engine == 'bing':
-            driver.get(f"https://www.bing.com/search?q={query}")
-        time.sleep(3)
-        results.extend([a.get_attribute('href') for a in driver.find_elements(By.CSS_SELECTOR, 'a') if a.get_attribute('href')])
-
-    return results[:num_results]
-
-def solve_captcha(driver):
-    print(f"{Fore.YELLOW}[!] Captcha tespit edildi. Manuel çözüm bekleniyor.{Style.RESET_ALL}")
-    input(f"{Fore.YELLOW}Captcha'yı çözün ve Enter'a basın.{Style.RESET_ALL}")
-
-def save_results_to_file(results, filename="scan_results/dork_result.txt"):
-    os.makedirs(os.path.dirname(filename), exist_ok=True)
-    with open(filename, 'a', encoding="utf-8") as f:
-        for result in results:
-            f.write(f"{result}\n")
-    print(f"{Fore.GREEN}[+] Sonuçlar {filename} dosyasına kaydedildi.{Style.RESET_ALL}")
-
 def time_tracker(task_name, duration_in_seconds):
     start_time = time.time()
     end_time = start_time + duration_in_seconds
@@ -159,35 +116,17 @@ def time_tracker(task_name, duration_in_seconds):
 
 # Tarama Fonksiyonları
 
+def run_dork_file_scan():
+    clear_console()
+    banner()
+    print("[*]\t dork scanner başlatılıyor")
+    subprocess.run(["python3", "scanners/dork_file_scanner.py"])
+
 def run_dork_scan():
-    print(f"{Fore.CYAN}[+] Dork taraması başlatılıyor...{Style.RESET_ALL}")
-    global driver
-    if not driver:
-        driver = start_browser()
-
-    targets = []
-
-    if setting.get("DORK"):
-        targets = dork_search(driver, setting.get("DORK"), num_results=20)
-    elif setting.get("DORK_INPUT"):
-        with open(setting.get("DORK_INPUT"), "r", encoding="utf-8") as f:
-            dork_queries = f.read().splitlines()
-        for query in dork_queries:
-            found = dork_search(driver, query, num_results=10)
-            targets.extend(found)
-    else:
-        print(f"{Fore.RED}[!] Dork veya dork-input verilmemiş.{Style.RESET_ALL}")
-        return
-
-    print(f"{Fore.GREEN}[+] Bulunan hedefler ({len(targets)}):{Style.RESET_ALL}")
-    for url in targets:
-        print(f"   -> {url}")
-        driver.get(url)
-        time.sleep(2)
-        if "captcha" in driver.page_source.lower():
-            solve_captcha(driver)
-
-    save_results_to_file(targets)
+    clear_console()
+    banner()
+    print("[*]\t dork scanner başlatılıyor")
+    subprocess.run(["python3", "scanners/dork_scanner.py"])
 
 def run_sqli_shell():
     with open("results/sql.txt", "r") as f:
@@ -220,7 +159,6 @@ def run_sqlmap():
         command += ["--user-agent", user_agent]
 
     subprocess.run(command)
-    
 
 def run_wpscan():
     print(f"{Fore.CYAN}[+] WPSCAN taraması başlatılıyor...{Style.RESET_ALL}")
@@ -295,12 +233,16 @@ def run_full_scan():
             thread = threading.Thread(target=func)
             threads.append(thread)
             thread.start()
+            run_autoreconx()
 
     for thread in threads:
         thread.join()
 
 def işlem_sıralama():
-    if setting.get("DORK", "off").lower() == "on":
+    if setting.get("DORK_FİLE_CHECK", "off").lower() == "on":
+        time_tracker("Dork Tarama", 120)
+        run_dork_file_scan()
+    elif setting.get("DORK_CHECK", "off").lower() == "on":
         time_tracker("Dork Tarama", 120)
         run_dork_scan()
     elif setting.get("FULL_SCAN", "off").lower() == "on":
@@ -319,7 +261,7 @@ def işlem_sıralama():
             if active.lower() == "on":
                 time_tracker(f"{name} Tarama", 60)
                 func()
-
+            run_autoreconx()
 # Ana Çalıştırıcı
 if __name__ == "__main__":
     clear_console()

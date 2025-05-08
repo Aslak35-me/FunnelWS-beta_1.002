@@ -137,11 +137,28 @@ fi
 TARGET_FILE_CHECK=$(jq -r '.TARGET_FILE_CHECK' "$CONFIG_PATH")
 TARGET=$(jq -r '.TARGET' "$CONFIG_PATH")
 TARGET_FILE_PATH=$(jq -r '.TARGET_FILE_PATH' "$CONFIG_PATH")
+DORK_CHECK=$(jq -r '.DORK_CHECK' "$CONFIG_PATH")
+DORK_FILE_CHECK=$(jq -r '.DORK_FILE_CHECK' "$CONFIG_PATH")
 
 # Hedef listesi oluştur
 targets=()
 
-if [[ "$TARGET_FILE_CHECK" == "on" ]]; then
+# DORK_CHECK veya DORK_FILE_CHECK aktifse, dork_output.txt'den hedefleri oku
+if [[ "$DORK_CHECK" == "on" || "$DORK_FILE_CHECK" == "on" ]]; then
+    DORK_OUTPUT_FILE="results/dork_output.txt"
+    if [ -f "$DORK_OUTPUT_FILE" ]; then
+        echo -e "${YELLOW}[*] Hedefler dork_output.txt dosyasından okunuyor${NC}"
+        # Sadece http:// veya https:// ile başlayan satırları al
+        while IFS= read -r line; do
+            if [[ "$line" =~ ^https?:// ]]; then
+                targets+=("$line")
+            fi
+        done < "$DORK_OUTPUT_FILE"
+    else
+        echo -e "${RED}[!] Hata: dork_output.txt dosyası bulunamadı!${NC}"
+        exit 1
+    fi
+elif [[ "$TARGET_FILE_CHECK" == "on" ]]; then
     echo -e "${YELLOW}[*] Hedefler dosyadan okunuyor: $TARGET_FILE_PATH${NC}"
     while IFS= read -r line; do
         cleaned=$(echo "$line" | xargs)
@@ -194,7 +211,7 @@ mkdir -p "$OUTER_DIR/logs"
 
 echo -e "${YELLOW}[*] Canlı hedefler kontrol ediliyor...${NC}"
 for target in "${targets[@]}"; do
-    # Eğer http:// veya https:// yoksa ekle
+    # Eğer http:// veya https:// yoksa ekle (DORK_CHECK durumunda zaten var)
     if [[ ! "$target" =~ ^https?:// ]]; then
         target="http://$target"
     fi
