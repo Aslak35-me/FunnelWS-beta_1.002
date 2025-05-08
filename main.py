@@ -161,6 +161,28 @@ def full_scan(is_enabled):
 def run_full_scan():
     print("[*] Hızlı tarama seçeneği seçildi!")
 
+def use_dork_check(is_enabled):
+    mode = "on" if is_enabled else "off"
+
+    # Dosya varsa oku, yoksa boş sözlük başlat
+    if os.path.exists(SETTINGS_FILE):
+        with open(SETTINGS_FILE, "r", encoding="utf-8") as f:
+            try:
+                settings = json.load(f)
+            except json.JSONDecodeError:
+                settings = {}
+    else:
+        settings = {}
+
+    # NMAP modunu güncelle
+    settings["DORK_CHECK"] = mode
+
+    # JSON dosyasına yaz
+    with open(SETTINGS_FILE, "w", encoding="utf-8") as f:
+        json.dump(settings, f, indent=4, ensure_ascii=False)
+
+    print(f"[+] DORK CHECK modu güncellendi: {mode}")
+
 def dork_search(dork):
     settings = load_settings()
     settings["DORK"] = dork
@@ -174,6 +196,28 @@ def dork_input(dork_file):
     save_settings(settings)
     print(f"[+] DORK_INPUT_FILE update edildi : {dork_file}")
     print(f"[+] File name: {file_name}")
+
+def use_dork_file_check(is_enabled):
+    mode = "on" if is_enabled else "off"
+
+    # Dosya varsa oku, yoksa boş sözlük başlat
+    if os.path.exists(SETTINGS_FILE):
+        with open(SETTINGS_FILE, "r", encoding="utf-8") as f:
+            try:
+                settings = json.load(f)
+            except json.JSONDecodeError:
+                settings = {}
+    else:
+        settings = {}
+
+    # NMAP modunu güncelle
+    settings["DORK_FİLE_CHECK"] = mode
+
+    # JSON dosyasına yaz
+    with open(SETTINGS_FILE, "w", encoding="utf-8") as f:
+        json.dump(settings, f, indent=4, ensure_ascii=False)
+
+    print(f"[+] DORK_FİLE_CHECK modu güncellendi: {mode}")
 
 def scan_sqli():
     print_error_and_exit("[*] açık seçme işlemi şuanlık kullanılamıyor... \n [*] lütfen açık seçme (sqli) parametresini kullanmayınız!")
@@ -511,8 +555,10 @@ if __name__ == "__main__":
         run_full_scan()
         full_scan(True)  # "on" olarak ayarla
     if args.dork:
+        use_dork_check(True)
         dork_search(args.dork)
     if args.dork_input:
+        use_dork_file_check(True)
         dork_input(args.dork_input)
     if args.sqli:
         scan_sqli()
