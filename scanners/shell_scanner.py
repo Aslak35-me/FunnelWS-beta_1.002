@@ -10,11 +10,15 @@ from colorama import init, Fore, Style
 
 init(autoreset=True)
 
-# setting.json dosyasını oku
-with open(os.path.join(os.path.dirname(__file__), 'config', 'setting.json'), 'r', encoding='utf-8') as f:
+base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+setting_path = os.path.join(base_dir, 'config', 'setting.json')
+
+with open(setting_path, 'r', encoding='utf-8') as f:
     setting = json.load(f)
 
-from config.setting import TARGET_FILE_PATH, TARGET, TARGET_FILE_CHECK
+TARGET_FILE_PATH = setting.get("TARGET_FILE_PATH")
+TARGET = setting.get("TARGET")
+TARGET_FILE_CHECK = setting.get("TARGET_FILE_CHECK")
 
 # Directory and file paths
 SCAN_RESULTS_DIR = "scan_results"
@@ -27,7 +31,7 @@ OUTPUT_DIR = "sql_exploits"
 if not os.path.exists(LOG_DIR):
     os.makedirs(LOG_DIR)
 
-logging.basicBaseConfig(
+logging.basicConfig(
     filename=LOG_FILE,
     level=logging.INFO,
     format='%(asctime)s - %(levelname)s - %(message)s'

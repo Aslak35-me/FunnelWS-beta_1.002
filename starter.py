@@ -201,7 +201,7 @@ def run_autoreconx():
 
     try:
         print("[*] AutoReconX.sh başlatılıyor...\n")
-        subprocess.run(["bash", script_path], check=True)
+        subprocess.run(["bash", "scanners/AutoReconX.sh"], check=True)
         print("\n✅ Tarama tamamlandı.")
     except subprocess.CalledProcessError as e:
         print(f"[!] Betik çalıştırılırken hata oluştu: {e}")
@@ -223,7 +223,6 @@ def run_full_scan():
 
     # Tarama araçlarını sıraya al
     scan_funcs = {
-        "SQLMAP": run_sqlmap,
         "NIKTO": run_nikto,
         "ZAPROXY": run_zaproxy,
         "METASPLOIT": run_metasploit,
