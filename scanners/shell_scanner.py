@@ -7,13 +7,14 @@ from typing import List, Dict, Optional
 from urllib.parse import urlparse
 import requests
 from colorama import init, Fore, Style
-from settings import TARGET_FILE_PATH, TARGET, TARGET_FILE_CHECK # type: ignore
 
 init(autoreset=True)
 
 # setting.json dosyasını oku
 with open(os.path.join(os.path.dirname(__file__), 'config', 'setting.json'), 'r', encoding='utf-8') as f:
     setting = json.load(f)
+
+from config.setting import TARGET_FILE_PATH, TARGET, TARGET_FILE_CHECK
 
 # Directory and file paths
 SCAN_RESULTS_DIR = "scan_results"
