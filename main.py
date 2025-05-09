@@ -523,7 +523,9 @@ if __name__ == "__main__":
         "ZAPROXY": "off",
         "METASPLOIT": "off",
         "RANDOM_AGENT": "off",
-        "WHOİS": "off"
+        "WHOİS": "off",
+        "DORK_CHECK": "off",
+        "DORK_FİLE_CHECK": "off"
     }
 
     # Eğer ayar dosyası yoksa, varsayılan ayarlarla oluştur

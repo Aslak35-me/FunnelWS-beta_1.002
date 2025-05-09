@@ -122,6 +122,10 @@ def run_dork_scan():
     print("[*]\t dork scanner başlatılıyor")
     subprocess.run(["python3", "scanners/dork_scanner.py"])
 
+def run_shell_scanner():
+    print("[*]\t shell scanner başlatılıyor")
+    subprocess.run(["python3", os.path.join("scanners", "shell_scanner.py")])
+
 def run_sqli_shell():
     with open("results/sql.txt", "r") as f:
         urls = f.readlines()
@@ -139,20 +143,6 @@ def run_panelfinder():
     for panel in panels:
         full_url = f"{setting.get('TARGET')}{panel}"
         print(f"Denetlenen: {full_url}")
-
-def run_sqlmap():
-    print(f"{Fore.CYAN}[+] SQLMAP taraması başlatılıyor...{Style.RESET_ALL}")
-    run_mini_sqli_scanner()
-    level = int(setting.get("LEVEL", 1))
-    risk = 1 if level <= 2 else (2 if level <= 4 else 3)
-    depth = 1 if level <= 2 else (2 if level <= 4 else 3)
-    command = ["sqlmap", "-u", setting.get("TARGET"), "--level", str(level), "--risk", str(risk), "--depth", str(depth), "--batch"]
-
-    if setting.get("RANDOM_AGENT", "off").lower() == "on":
-        user_agent = get_random_useragent()
-        command += ["--user-agent", user_agent]
-
-    subprocess.run(command)
 
 def run_wpscan():
     print(f"{Fore.CYAN}[+] WPSCAN taraması başlatılıyor...{Style.RESET_ALL}")
@@ -218,16 +208,21 @@ def run_full_scan():
     # Önce çakışmaları kontrol et
     check_conflicts()
 
-    # AutoReconX taramasını başlat
+    # AutoReconX ve shell ve panelfinder taramasını başlat
     run_autoreconx()
+    run_shell_scanner()
+    run_panelfinder()
+    run_mini_sqli_scanner()
+    run_sqli_shell()
 
     # Tarama araçlarını sıraya al
     scan_funcs = {
         "SQLMAP": run_sqlmap,
-        "WPSCAN": run_wpscan,
         "NIKTO": run_nikto,
         "ZAPROXY": run_zaproxy,
-        "METASPLOIT": run_metasploit
+        "METASPLOIT": run_metasploit,
+        "WHOİS": run_whois,
+
     }
 
     # Thread'li olarak her aktif aracı çalıştır
@@ -261,10 +256,13 @@ def işlem_sıralama():
 
     # Full scan yoksa önce autoreconx çalıştırılır
     run_autoreconx()
+    run_panelfinder()
+    run_shell_scanner()
 
     # Sonra hangi tarama araçları açıksa onlar sırasıyla çalıştırılır
     if setting.get("SQLMAP", "off").lower() == "on":
-        run_sqlmap()
+        run_sqli_shell()
+        run_mini_sqli_scanner()
     if setting.get("WPSCAN", "off").lower() == "on":
         run_wpscan()
     if setting.get("NIKTO", "off").lower() == "on":
