@@ -468,7 +468,6 @@ def start():
 
 if __name__ == "__main__":
     clear_console()
-    banner()
     parser = argparse.ArgumentParser(description="FunnelWS - Web Vulnerability Scanner", add_help=False)
 
     # Tüm argüman tanımları
