@@ -150,6 +150,10 @@ def run_panelfinder():
         full_url = f"{setting.get('TARGET')}{panel}"
         print(f"Denetlenen: {full_url}")
 
+def run_basic_scanner():
+    print("[*]\t basic scanner başlatılıyor")
+    subprocess.run(["python3", os.path.join("scanners", "basic_scanner.py")])
+
 def run_wpscan():
     print(f"{Fore.CYAN}[+] WPSCAN taraması başlatılıyor...{Style.RESET_ALL}")
     command = ["wpscan", "--url", setting.get("TARGET"), "--disable-tls-checks"]
@@ -215,6 +219,7 @@ def run_full_scan():
     check_conflicts()
 
     # AutoReconX ve shell ve panelfinder taramasını başlat
+    run_basic_scanner()
     run_autoreconx()
     run_shell_scanner()
     run_panelfinder()
@@ -260,6 +265,7 @@ def işlem_sıralama():
         return
 
     # Full scan yoksa önce autoreconx çalıştırılır
+    run_basic_scanner()
     run_autoreconx()
     run_panelfinder()
     run_shell_scanner()

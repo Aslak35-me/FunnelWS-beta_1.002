@@ -530,7 +530,14 @@ if __name__ == "__main__":
         "RANDOM_AGENT": "off",
         "WHOİS": "off",
         "DORK_CHECK": "off",
-        "DORK_FİLE_CHECK": "off"
+        "DORK_FİLE_CHECK": "off",
+        "sqlmap_threads": 10,
+        "sqlmap_level": 3,
+        "sqlmap_risk": 3,
+        "sqlmap_timeout": 300,
+        "request_timeout": 10,
+        "shell_upload_path": "/var/www/html/shell.php",
+        "test_command": "whoami"
     }
 
     # Eğer ayar dosyası yoksa, varsayılan ayarlarla oluştur
