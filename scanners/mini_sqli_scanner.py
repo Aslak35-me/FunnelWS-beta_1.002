@@ -9,7 +9,7 @@ from urllib.parse import urlparse, urlsplit, urlunsplit, parse_qs, urlencode
 import colorama
 from colorama import init, Fore, Style
 from config.useragent import get_random_useragent
-from settings import TARGET_FILE_PATH, TARGET, TARGET_FILE_CHECK # type: ignore
+from config.setting import TARGET_FILE_PATH, TARGET, TARGET_FILE_CHECK # type: ignore
 
 import sys
 import os

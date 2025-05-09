@@ -127,9 +127,15 @@ def run_shell_scanner():
     subprocess.run(["python3", os.path.join("scanners", "shell_scanner.py")])
 
 def run_sqli_shell():
-    with open("results/sql.txt", "r") as f:
+    RESULTS_DIR = "results"
+    RESULTS_FILE = os.path.join(RESULTS_DIR, "sqli_shell.txt")
+
+    if not os.path.exists(RESULTS_DIR):
+        os.makedirs(RESULTS_DIR)
+
+with open("results/sqli_shell.txt", "r") as f:
         urls = f.readlines()
-    for url in urls:
+for url in urls:
         url = url.strip()
         subprocess.run(["sqlmap", "-u", url, "-v3", "--batch", "--threads=10", "--os-shell", "--output-dir=sql"])
 
