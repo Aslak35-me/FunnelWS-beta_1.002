@@ -14,7 +14,16 @@ from bs4 import BeautifulSoup
 from colorama import init, Fore, Back, Style
 import textwrap
 from config.useragent import get_random_useragent
-from settings import TARGET_FILE_PATH, TARGET, TARGET_FILE_CHECK  # type: ignore
+
+base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+setting_path = os.path.join(base_dir, 'config', 'setting.json')
+
+with open(setting_path, 'r', encoding='utf-8') as f:
+    setting = json.load(f)
+
+TARGET_FILE_PATH = setting.get("TARGET_FILE_PATH")
+TARGET = setting.get("TARGET")
+TARGET_FILE_CHECK = setting.get("TARGET_FILE_CHECK")
 
 # Renkleri başlat
 init(autoreset=True)

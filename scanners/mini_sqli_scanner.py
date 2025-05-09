@@ -10,9 +10,18 @@ import colorama
 from concurrent.futures import ThreadPoolExecutor
 from urllib.parse import urlparse, urlsplit, urlunsplit, parse_qs, urlencode
 from colorama import init, Fore, Style
-from config.useragent import get_random_useragent
-from config.setting import TARGET_FILE_PATH, TARGET, TARGET_FILE_CHECK # type: ignore
 
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
+base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+setting_path = os.path.join(base_dir, 'config', 'setting.json')
+
+with open(setting_path, 'r', encoding='utf-8') as f:
+    setting = json.load(f)
+
+TARGET_FILE_PATH = setting.get("TARGET_FILE_PATH")
+TARGET = setting.get("TARGET")
+TARGET_FILE_CHECK = setting.get("TARGET_FILE_CHECK")
 
 # Proje kök dizinini Python'un modül arama yoluna ekle
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))

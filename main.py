@@ -460,6 +460,11 @@ def clear_console():
     current_os = platform.system()
     os.system('cls' if current_os == "Windows" else 'clear')
 
+def reset_settings_to_default():
+    os.makedirs(os.path.dirname(SETTINGS_FILE), exist_ok=True)
+    with open(SETTINGS_FILE, "w", encoding="utf-8") as f:
+        json.dump(DEFAULT_SETTINGS, f, indent=4, ensure_ascii=False)
+    
 def start():
     clear_console()
     banner()
@@ -468,6 +473,7 @@ def start():
 
 if __name__ == "__main__":
     clear_console()
+    reset_settings_to_default()
     parser = argparse.ArgumentParser(description="FunnelWS - Web Vulnerability Scanner", add_help=False)
 
     # Tüm argüman tanımları
