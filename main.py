@@ -463,7 +463,7 @@ def clear_console():
 def reset_settings_to_default():
     os.makedirs(os.path.dirname(SETTINGS_FILE), exist_ok=True)
     with open(SETTINGS_FILE, "w", encoding="utf-8") as f:
-        json.dump(DEFAULT_SETTINGS, f, indent=4, ensure_ascii=False)
+        json.dump(default_settings, f, indent=4, ensure_ascii=False)
     
 def start():
     clear_console()
