@@ -1,5 +1,6 @@
 import sys
 from pathlib import Path
+import json
 
 # 1. Proje yapılandırması - EN ÜSTTE OLMALI
 BASE_DIR = Path(__file__).parent.parent  # /home/kali/FunnelWS-beta_1.002
@@ -26,7 +27,6 @@ import time
 import random
 import subprocess
 import ssl
-import json
 import os
 import re
 from urllib.parse import urlparse
@@ -576,8 +576,12 @@ def print_detailed_info(results):
     print("\n" + Fore.GREEN + "✨ Tarama tamamlandı! ✨")
 
 def main():
-    domain = input(Fore.CYAN + "\n🔎 Hedef URL veya IP girin: " + Fore.WHITE).strip()
-    scanner = WebTechScanner(domain)
+    # Artık input ile değil, setting.json'dan alıyoruz
+    if not TARGET:
+        print(Fore.RED + "HATA: setting.json'da TARGET belirtilmemiş!")
+        sys.exit(1)
+        
+    scanner = WebTechScanner(TARGET)
     results = scanner.run_all_checks()
     
     print_banner()
