@@ -461,6 +461,30 @@ def clear_console():
     os.system('cls' if current_os == "Windows" else 'clear')
 
 def reset_settings_to_default():
+    default_settings = {
+        "FAST_SCAN": "off",
+        "FULL_SCAN": "off",
+        "SQLMAP": "off",
+        "NMAP": "off",
+        "WPSCAN": "off",
+        "NIKTO": "off",
+        "ZAPROXY": "off",
+        "METASPLOIT": "off",
+        "RANDOM_AGENT": "off",
+        "WHOİS": "off",
+        "DORK_CHECK": "off",
+        "DORK_FİLE_CHECK": "off",
+        "sqlmap_threads": 10,
+        "sqlmap_level": 3,
+        "sqlmap_risk": 3,
+        "sqlmap_timeout": 300,
+        "request_timeout": 10,
+        "shell_upload_path": "/var/www/html/shell.php",
+        "test_command": "whoami",
+        "RATE_LIMIT_WAIT": 180,
+        "MAX_RETRIES": 3,
+        "TIMEOUT": 10
+        }
     os.makedirs(os.path.dirname(SETTINGS_FILE), exist_ok=True)
     with open(SETTINGS_FILE, "w", encoding="utf-8") as f:
         json.dump(default_settings, f, indent=4, ensure_ascii=False)
@@ -471,6 +495,7 @@ def start():
     print("[*]\t starter başlatılıyor")
     subprocess.run(["python3", "starter.py"])
 
+    
 if __name__ == "__main__":
     clear_console()
     reset_settings_to_default()
@@ -517,28 +542,6 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    # Önce tüm ayarları "off" olarak başlat
-    default_settings = {
-        "FAST_SCAN": "off",
-        "FULL_SCAN": "off",
-        "SQLMAP": "off",
-        "NMAP": "off",
-        "WPSCAN": "off",
-        "NIKTO": "off",
-        "ZAPROXY": "off",
-        "METASPLOIT": "off",
-        "RANDOM_AGENT": "off",
-        "WHOİS": "off",
-        "DORK_CHECK": "off",
-        "DORK_FİLE_CHECK": "off",
-        "sqlmap_threads": 10,
-        "sqlmap_level": 3,
-        "sqlmap_risk": 3,
-        "sqlmap_timeout": 300,
-        "request_timeout": 10,
-        "shell_upload_path": "/var/www/html/shell.php",
-        "test_command": "whoami"
-    }
 
     # Eğer ayar dosyası yoksa, varsayılan ayarlarla oluştur
     if not os.path.exists(SETTINGS_FILE):

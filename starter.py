@@ -212,6 +212,22 @@ def run_autoreconx():
     except Exception as ex:
         print(f"[!] Genel hata: {ex}")
     
+def run_vuln_scanner():
+    script_path = os.path.join("scanners", "vuln_scanner.py")
+
+    if not os.path.isfile(script_path):
+        print(f"[!] Betik bulunamadı: {script_path}")
+        return
+
+    try:
+        print("[*] vuln scanner başlatılıyor...\n")
+        subprocess.run(["python3", "scanners/vuln_scanner.py"], check=True)
+        print("\n✅ Tarama tamamlandı.")
+    except subprocess.CalledProcessError as e:
+        print(f"[!] Betik çalıştırılırken hata oluştu: {e}")
+    except Exception as ex:
+        print(f"[!] Genel hata: {ex}")
+
 def run_full_scan():
     print(f"{Fore.CYAN}[+] FULL tarama başlatılıyor...{Style.RESET_ALL}")
 
@@ -225,6 +241,7 @@ def run_full_scan():
     run_panelfinder()
     run_mini_sqli_scanner()
     run_sqli_shell()
+    run_vuln_scanner()
 
     # Tarama araçlarını sıraya al
     scan_funcs = {
@@ -269,6 +286,7 @@ def işlem_sıralama():
     run_autoreconx()
     run_panelfinder()
     run_shell_scanner()
+    run_vuln_scanner()
 
     # Sonra hangi tarama araçları açıksa onlar sırasıyla çalıştırılır
     if setting.get("SQLMAP", "off").lower() == "on":
