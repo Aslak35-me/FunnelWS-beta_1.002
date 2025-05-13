@@ -1,3 +1,7 @@
+import sys
+from pathlib import Path
+sys.path.append(str(Path(__file__).parent.parent))  # Kritik çözüm satırı!
+
 import requests
 import socks
 import socket
@@ -13,12 +17,13 @@ from urllib.parse import urlparse
 from bs4 import BeautifulSoup
 from colorama import init, Fore, Back, Style
 import textwrap
-from config.useragent import get_random_useragent
+from config.useragent import get_random_useragent  # Artık hatasız çalışacak
 
-base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
-setting_path = os.path.join(base_dir, 'config', 'setting.json')
+# Dosya yolları (otomatik ayarlanır)
+BASE_DIR = Path(__file__).parent.parent
+SETTING_PATH = BASE_DIR / 'config' / 'setting.json'
 
-with open(setting_path, 'r', encoding='utf-8') as f:
+with open(SETTING_PATH, 'r', encoding='utf-8') as f:
     setting = json.load(f)
 
 TARGET_FILE_PATH = setting.get("TARGET_FILE_PATH")

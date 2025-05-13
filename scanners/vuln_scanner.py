@@ -34,34 +34,43 @@ class AdvancedVulnerabilityScanner:
         self.max_retries = self.settings['MAX_RETRIES']
         self.timeout = self.settings['TIMEOUT']
 
-    def load_vulnerability_database(self):
-        """Vulnerability veritabanını yükler"""
-        self.vuln_db = {}
-        base_path = os.path.join('files', 'vuln')
-        
-        # CVE veritabanını yükle
-        cve_path = os.path.join(base_path, 'cve')
+def load_vulnerability_database(self):
+    """Vulnerability veritabanını yükler"""
+    self.vuln_db = {}
+    base_path = os.path.join('files', 'vuln')
+    
+    # CVE veritabanını yükle
+    cve_path = os.path.join(base_path, 'cve')
+    if os.path.exists(cve_path):
         for tech_file in os.listdir(cve_path):
             if tech_file.endswith('.json'):
                 tech_name = tech_file.split('.')[0]
                 with open(os.path.join(cve_path, tech_file), 'r') as f:
                     self.vuln_db.setdefault(tech_name, {}).update({'cve': json.load(f)})
-        
-        # Exploit-DB veritabanını yükle
-        exploit_path = os.path.join(base_path, 'exploit-db')
+    else:
+        print(f"{Fore.YELLOW}[!] CVE dizini bulunamadı: {cve_path}{Style.RESET_ALL}")
+    
+    # Exploit-DB veritabanını yükle
+    exploit_path = os.path.join(base_path, 'exploit-db')
+    if os.path.exists(exploit_path):
         for tech_file in os.listdir(exploit_path):
             if tech_file.endswith('.json'):
                 tech_name = tech_file.split('.')[0]
                 with open(os.path.join(exploit_path, tech_file), 'r') as f:
                     self.vuln_db.setdefault(tech_name, {}).update({'exploit-db': json.load(f)})
-        
-        # NVD veritabanını yükle
-        nvd_path = os.path.join(base_path, 'nvd')
+    else:
+        print(f"{Fore.YELLOW}[!] Exploit-DB dizini bulunamadı: {exploit_path}{Style.RESET_ALL}")
+    
+    # NVD veritabanını yükle
+    nvd_path = os.path.join(base_path, 'nvd')
+    if os.path.exists(nvd_path):
         for tech_file in os.listdir(nvd_path):
             if tech_file.endswith('.json'):
                 tech_name = tech_file.split('.')[0]
                 with open(os.path.join(nvd_path, tech_file), 'r') as f:
                     self.vuln_db.setdefault(tech_name, {}).update({'nvd': json.load(f)})
+    else:
+        print(f"{Fore.YELLOW}[!] NVD dizini bulunamadı: {nvd_path}{Style.RESET_ALL}")
 
     def scan_target(self, target):
         """Tek bir hedefi tarar"""
