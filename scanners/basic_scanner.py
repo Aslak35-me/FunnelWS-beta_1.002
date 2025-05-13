@@ -17,7 +17,24 @@ from urllib.parse import urlparse
 from bs4 import BeautifulSoup
 from colorama import init, Fore, Back, Style
 import textwrap
-from config.useragent import get_random_useragent  # Artık hatasız çalışacak
+import sys
+import os
+from pathlib import Path
+
+# 1. Proje kök yolunu dinamik olarak belirle
+BASE_DIR = Path(__file__).parent.parent  # /home/kali/FunnelWS-beta_1.002
+sys.path.append(str(BASE_DIR))  # Python'a kök dizini ekle
+
+# 2. setting.json yolunu doğru şekilde oluştur
+SETTING_PATH = BASE_DIR / 'config' / 'setting.json'
+
+# 3. Dosyayı aç (tüm kodunuzda SADECE bu yolu kullanın)
+with open(SETTING_PATH, 'r', encoding='utf-8') as f:
+    setting = json.load(f)
+
+# 4. Diğer importlar (DEĞİŞMEDEN kalacak)
+import json
+from config.useragent import get_random_useragent  # Artık çalışacak
 
 # Dosya yolları (otomatik ayarlanır)
 BASE_DIR = Path(__file__).parent.parent
