@@ -27,7 +27,7 @@ class AdvancedVulnerabilityScanner:
         
     def load_settings(self):
         """Ayarları yükler"""
-        with open('config/settings.json', 'r') as f:
+        with open('config/setting.json', 'r') as f:
             self.settings = json.load(f)
         
         self.rate_limit_wait = self.settings['RATE_LIMIT_WAIT']
