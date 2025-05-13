@@ -1,7 +1,23 @@
 import sys
 from pathlib import Path
-sys.path.append(str(Path(__file__).parent.parent))  # Kritik çözüm satırı!
 
+# 1. Proje yapılandırması - EN ÜSTTE OLMALI
+BASE_DIR = Path(__file__).parent.parent  # /home/kali/FunnelWS-beta_1.002
+sys.path.append(str(BASE_DIR))  # Python yoluna kök dizini ekle
+
+# 2. Ayarları yükle
+SETTING_PATH = BASE_DIR / 'config' / 'setting.json'
+try:
+    with open(SETTING_PATH, 'r', encoding='utf-8') as f:
+        setting = json.load(f)
+except FileNotFoundError:
+    print(f"[HATA] setting.json bulunamadı: {SETTING_PATH}")
+    sys.exit(1)
+except json.JSONDecodeError:
+    print(f"[HATA] Geçersiz JSON formatı: {SETTING_PATH}")
+    sys.exit(1)
+
+# 3. Gerekli kütüphaneler
 import requests
 import socks
 import socket
@@ -17,42 +33,15 @@ from urllib.parse import urlparse
 from bs4 import BeautifulSoup
 from colorama import init, Fore, Back, Style
 import textwrap
-import sys
-import os
-from pathlib import Path
+from config.useragent import get_random_useragent
 
-# 1. Proje kök yolunu dinamik olarak belirle
-BASE_DIR = Path(__file__).parent.parent  # /home/kali/FunnelWS-beta_1.002
-sys.path.append(str(BASE_DIR))  # Python'a kök dizini ekle
-
-# 2. setting.json yolunu doğru şekilde oluştur
-SETTING_PATH = BASE_DIR / 'config' / 'setting.json'
-
-# 3. Dosyayı aç (tüm kodunuzda SADECE bu yolu kullanın)
-with open(SETTING_PATH, 'r', encoding='utf-8') as f:
-    setting = json.load(f)
-
-# 4. Diğer importlar (DEĞİŞMEDEN kalacak)
-import json
-from config.useragent import get_random_useragent  # Artık çalışacak
-
-# Dosya yolları (otomatik ayarlanır)
-BASE_DIR = Path(__file__).parent.parent
-SETTING_PATH = BASE_DIR / 'config' / 'setting.json'
-
-with open(SETTING_PATH, 'r', encoding='utf-8') as f:
-    setting = json.load(f)
-
+# 4. Ayarlardan değerleri al
 TARGET_FILE_PATH = setting.get("TARGET_FILE_PATH")
 TARGET = setting.get("TARGET")
 TARGET_FILE_CHECK = setting.get("TARGET_FILE_CHECK")
 
-# Renkleri başlat
+# 5. Renkleri başlat
 init(autoreset=True)
-
-# setting.json dosyasını oku
-with open(os.path.join(os.path.dirname(__file__), 'config', 'setting.json'), 'r', encoding='utf-8') as f:
-    setting = json.load(f)
 
 class WebTechScanner:
     def __init__(self, target):
