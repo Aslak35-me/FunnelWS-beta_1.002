@@ -17,17 +17,37 @@ mkdir -p "$TOOLS_DIR" "$BIN_DIR"
 # Başlangıç mesajı
 echo -e "${GREEN}[*] AutoReconX.sh başlatılıyor...${NC}"
 
+# Betiğin gerçek yolunu bul
+SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" &>/dev/null && pwd)
+
 # GPG anahtar sorununu çöz (modern yöntem)
 fix_gpg() {
     echo -e "${YELLOW}[*] GPG anahtar sorunları çözülüyor...${NC}"
     
-    # Kali Linux arşiv anahtarını ekle
-    wget -q -O /tmp/kali-archive-key.asc https://archive.kali.org/archive-key.asc
-    sudo gpg --dearmor -o /usr/share/keyrings/kali-archive-keyring.gpg /tmp/kali-archive-key.asc
-    rm -f /tmp/kali-archive-key.asc
-    
-    # Ubuntu anahtarlarını yükle
-    sudo apt-get update && sudo apt-get install -y ubuntu-keyring
+    # Dağıtımı tespit et
+    if [ -f /etc/os-release ]; then
+        . /etc/os-release
+        case $ID in
+            kali)
+                # Kali Linux arşiv anahtarını ekle
+                wget -q -O /tmp/kali-archive-key.asc https://archive.kali.org/archive-key.asc
+                sudo gpg --dearmor -o /usr/share/keyrings/kali-archive-keyring.gpg /tmp/kali-archive-key.asc
+                rm -f /tmp/kali-archive-key.asc
+                ;;
+            ubuntu|debian)
+                # Ubuntu/Debian anahtarlarını yükle
+                sudo apt-get update && sudo apt-get install -y ubuntu-keyring debian-archive-keyring
+                ;;
+            *)
+                echo -e "${YELLOW}[!] Uyarı: $ID dağıtımı için otomatik GPG anahtar yönetimi desteklenmiyor${NC}"
+                echo -e "${YELLOW}[!] Lütfen manuel olarak gerekli GPG anahtarlarını ekleyin${NC}"
+                return 1
+                ;;
+        esac
+    else
+        echo -e "${RED}[!] Hata: Sistem dağıtımı tespit edilemedi!${NC}"
+        return 1
+    fi
     
     echo -e "${GREEN}[+] GPG anahtar sorunları çözüldü${NC}"
     echo -e "${YELLOW}[!] NOT: 'apt-key' kullanımdan kaldırıldığı için modern GPG anahtar yönetimi kullanılmıştır.${NC}"
@@ -40,8 +60,13 @@ update_path() {
     for path in "${paths_to_add[@]}"; do
         if [[ ":$PATH:" != *":$path:"* ]]; then
             echo -e "${YELLOW}[+] PATH'e $path ekleniyor...${NC}"
-            echo "export PATH=\"\$PATH:$path\"" >> "$HOME/.bashrc"
-            echo "export PATH=\"\$PATH:$path\"" >> "$HOME/.zshrc"
+            for rcfile in "$HOME/.bashrc" "$HOME/.zshrc"; do
+                if [ -f "$rcfile" ]; then
+                    if ! grep -q "export PATH=\"\$PATH:$path\"" "$rcfile"; then
+                        echo "export PATH=\"\$PATH:$path\"" >> "$rcfile"
+                    fi
+                fi
+            done
             export PATH="$PATH:$path"
         fi
     done
@@ -90,6 +115,14 @@ install_go() {
         if [ $? -ge 1 ]; then
             echo -e "${YELLOW}[+] Go zaten yüklü: $(go version)${NC}"
             return 0
+        else
+            echo -e "${YELLOW}[!] Go sürümü ($current_version) gereken sürümden ($required_version) eski${NC}"
+            echo -e "${YELLOW}[!] Mevcut Go kurulumu (/usr/local/go) güncellenecek. Devam edilsin mi? (e/H): ${NC}"
+            read -r confirmation
+            if [[ "$confirmation" != "e" && "$confirmation" != "E" ]]; then
+                echo -e "${RED}[!] Go kurulumu kullanıcı tarafından iptal edildi.${NC}"
+                return 1
+            fi
         fi
     fi
     
@@ -111,6 +144,16 @@ install_go() {
         }
     fi
 
+    # Checksum doğrulama (basit versiyon)
+    echo -e "${YELLOW}[*] Go tarball boyutu kontrol ediliyor...${NC}"
+    local filesize=$(stat -c%s "/tmp/go.tar.gz")
+    if [ "$filesize" -lt 100000000 ]; then  # ~100MB'den küçükse şüpheli
+        echo -e "${RED}[!] İndirilen Go tarball boyutu çok küçük, dosya bozuk olabilir!${NC}"
+        echo -e "${YELLOW}[!] Lütfen manuel olarak kontrol edin: https://go.dev/dl/${NC}"
+        rm -f /tmp/go.tar.gz
+        return 1
+    fi
+
     sudo tar -C /usr/local -xzf /tmp/go.tar.gz
     rm -f /tmp/go.tar.gz
     
@@ -120,7 +163,7 @@ install_go() {
         return 1
     fi
     
-    echo -e "${GREEN}[+] Go $latest_go kuruldu${NC}"
+    echo -e "${GREEN}[+] Go $latest_go kuruldu: $(/usr/local/go/bin/go version)${NC}"
 }
 
 # Python kurulumu
@@ -145,13 +188,17 @@ install_go_tool() {
         
         # Kurulumu doğrula
         if command -v "$tool" &> /dev/null; then
-            echo -e "${GREEN}[+] $tool kuruldu ($($tool -version 2>/dev/null || $tool --version 2>/dev/null || echo 'sürüm bilgisi yok'))${NC}"
+            # Çeşitli sürüm komut formatlarını dene
+            local version=$($tool -version 2>/dev/null || $tool --version 2>/dev/null || $tool version 2>/dev/null || $tool -v 2>/dev/null || echo 'sürüm bilgisi yok')
+            echo -e "${GREEN}[+] $tool kuruldu ($version)${NC}"
         else
             echo -e "${RED}[-] $tool kurulumu başarısız oldu!${NC}"
             return 1
         fi
     else
-        echo -e "${YELLOW}[+] $tool zaten yüklü ($($tool -version 2>/dev/null || $tool --version 2>/dev/null || echo 'sürüm bilgisi yok'))${NC}"
+        # Çeşitli sürüm komut formatlarını dene
+        local version=$($tool -version 2>/dev/null || $tool --version 2>/dev/null || $tool version 2>/dev/null || $tool -v 2>/dev/null || echo 'sürüm bilgisi yok')
+        echo -e "${YELLOW}[+] $tool zaten yüklü ($version)${NC}"
     fi
 }
 
@@ -160,11 +207,13 @@ install_system_deps() {
     echo -e "${BLUE}[*] Sistem bağımlılıkları kontrol ediliyor...${NC}"
     
     # Önce GPG sorununu çöz
-    fix_gpg
+    if ! fix_gpg; then
+        echo -e "${YELLOW}[!] GPG anahtar sorunları çözülemedi, bazı işlemler başarısız olabilir${NC}"
+    fi
     
     # Paket listesini güncelle (sadece bir kez)
     if ! sudo apt update; then
-        echo -e "${RED}[!] apt update başarısız oldu, GPG anahtarları sorunu olabilir${NC}"
+        echo -e "${RED}[!] apt update başarısız oldu!${NC}"
         return 1
     fi
     
@@ -172,6 +221,19 @@ install_system_deps() {
     
     # Kullanılmayan paketleri temizle
     sudo apt autoremove -y
+}
+
+# Nuclei template'lerini güncelle
+update_nuclei_templates() {
+    if command -v nuclei &> /dev/null; then
+        echo -e "${BLUE}[*] Nuclei template'leri güncelleniyor...${NC}"
+        nuclei -update-templates 2>&1 | while read -r line; do
+            echo -e "${YELLOW}[nuclei] $line${NC}"
+        done
+        echo -e "${GREEN}[+] Nuclei template güncellemesi tamamlandı${NC}"
+    else
+        echo -e "${YELLOW}[!] Nuclei kurulu değil, template güncelleme atlanıyor${NC}"
+    fi
 }
 
 # Ana kurulum fonksiyonu
@@ -203,6 +265,7 @@ install_dependencies() {
         ["gf"]="github.com/tomnomnom/gf"
         ["qsreplace"]="github.com/tomnomnom/qsreplace"
         ["nuclei"]="github.com/projectdiscovery/nuclei/v2/cmd/nuclei"
+        ["anew"]="github.com/tomnomnom/anew"  # anew eklendi
     )
 
     for tool in "${!go_tools[@]}"; do
@@ -221,13 +284,23 @@ install_dependencies() {
     if [ ! -d "$HOME/.gf" ]; then
         echo -e "${BLUE}[*] GF patternleri indiriliyor...${NC}"
         mkdir -p "$HOME/.gf"
-        git clone https://github.com/tomnomnom/gf "$TOOLS_DIR/gf" || {
+        if git clone https://github.com/tomnomnom/gf "$TOOLS_DIR/gf"; then
+            cp -r "$TOOLS_DIR/gf/examples" "$HOME/.gf/"
+            for rcfile in "$HOME/.bashrc" "$HOME/.zshrc"; do
+                if [ -f "$rcfile" ]; then
+                    if ! grep -q "source \$HOME/.gf/gf-completion.bash" "$rcfile"; then
+                        echo 'source $HOME/.gf/gf-completion.bash' >> "$rcfile"
+                    fi
+                fi
+            done
+        else
             echo -e "${RED}[-] GF pattern indirme başarısız oldu!${NC}"
-            return
-        }
-        cp -r "$TOOLS_DIR/gf/examples" "$HOME/.gf/"
-        echo 'source $HOME/.gf/gf-completion.bash' >> ~/.bashrc
+            return 1
+        fi
     fi
+
+    # Nuclei template güncellemesi
+    update_nuclei_templates
 
     # Go modülleri temizleme
     go clean -modcache
@@ -239,16 +312,20 @@ install_dependencies
 echo -e "${GREEN}[✔] Tüm bağımlılıklar başarıyla kuruldu!${NC}"
 
 # Ana script devamı...
-CONFIG_PATH="$(dirname "$0")/../config/setting.json"
+CONFIG_PATH="$SCRIPT_DIR/../config/setting.json"
 OUTER_DIR="results"
 WORDLIST="${WORDLIST:-$HOME/SecLists/Discovery/Web-Content/raft-medium-words.txt}"
 
 # Eğer SecLists yoksa kur
 if [ ! -d "$HOME/SecLists" ]; then
     echo -e "${YELLOW}[*] SecLists indiriliyor...${NC}"
-    git clone --depth 1 https://github.com/danielmiessler/SecLists.git "$HOME/SecLists" || {
+    if git clone --depth 1 https://github.com/danielmiessler/SecLists.git "$HOME/SecLists"; then
+        echo -e "${GREEN}[+] SecLists başarıyla indirildi${NC}"
+    else
         echo -e "${RED}[-] SecLists indirme başarısız oldu!${NC}"
-    }
+        echo -e "${YELLOW}[!] Alternatif bir kelime listesi kullanabilirsiniz:${NC}"
+        echo -e "${YELLOW}[!] WORDLIST=/path/to/wordlist.txt ./AutoReconX.sh${NC}"
+    fi
 fi
 
 # JSON config'ini oku
