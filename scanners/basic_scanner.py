@@ -29,6 +29,7 @@ import subprocess
 import ssl
 import os
 import re
+import platform
 from urllib.parse import urlparse
 from bs4 import BeautifulSoup
 from colorama import init, Fore, Back, Style
@@ -575,6 +576,11 @@ def print_detailed_info(results):
     
     print("\n" + Fore.GREEN + "✨ Tarama tamamlandı! ✨")
 
+
+def clear_console():
+    current_os = platform.system()
+    os.system('cls' if current_os == "Windows" else 'clear')
+
 def main():
     # Artık input ile değil, setting.json'dan alıyoruz
     if not TARGET:
@@ -584,6 +590,7 @@ def main():
     scanner = WebTechScanner(TARGET)
     results = scanner.run_all_checks()
     
+    clear_console()
     print_banner()
     print_detailed_info(results)
 
