@@ -204,7 +204,7 @@ def run_autoreconx():
         return
 
     try:
-        print("[*] AutoReconX.sh başlatılıyor...\n")
+        print("\n\n")
         subprocess.run(["bash", "scanners/AutoReconX.sh"], check=True)
         print("\n✅ Tarama tamamlandı.")
     except subprocess.CalledProcessError as e:

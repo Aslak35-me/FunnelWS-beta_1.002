@@ -17,65 +17,110 @@ mkdir -p "$TOOLS_DIR" "$BIN_DIR"
 # Başlangıç mesajı
 echo -e "${GREEN}[*] AutoReconX.sh başlatılıyor...${NC}"
 
-# GPG anahtar sorununu çöz
+# GPG anahtar sorununu çöz (modern yöntem)
 fix_gpg() {
     echo -e "${YELLOW}[*] GPG anahtar sorunları çözülüyor...${NC}"
-    sudo rm -f /etc/apt/trusted.gpg.d/kali-archive-keyring.gpg
-    sudo apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 827C8569F2518CC677FECA1AED65462EC8D5E4C5
-    wget -q -O - https://archive.kali.org/archive-key.asc | sudo apt-key add -
+    
+    # Kali Linux arşiv anahtarını ekle
+    wget -q -O /tmp/kali-archive-key.asc https://archive.kali.org/archive-key.asc
+    sudo gpg --dearmor -o /usr/share/keyrings/kali-archive-keyring.gpg /tmp/kali-archive-key.asc
+    rm -f /tmp/kali-archive-key.asc
+    
+    # Ubuntu anahtarlarını yükle
+    sudo apt-get update && sudo apt-get install -y ubuntu-keyring
+    
     echo -e "${GREEN}[+] GPG anahtar sorunları çözüldü${NC}"
+    echo -e "${YELLOW}[!] NOT: 'apt-key' kullanımdan kaldırıldığı için modern GPG anahtar yönetimi kullanılmıştır.${NC}"
 }
 
 # PATH güncelleme
 update_path() {
-    if [[ ":$PATH:" != *":$BIN_DIR:"* ]]; then
-        echo -e "${YELLOW}[+] PATH güncelleniyor...${NC}"
-        echo "export PATH=\"\$PATH:$BIN_DIR\"" >> "$HOME/.bashrc"
-        echo "export PATH=\"\$PATH:$BIN_DIR\"" >> "$HOME/.zshrc"
-        export PATH="$PATH:$BIN_DIR"
+    local paths_to_add=("$BIN_DIR" "$HOME/go/bin" "/usr/local/go/bin")
+    
+    for path in "${paths_to_add[@]}"; do
+        if [[ ":$PATH:" != *":$path:"* ]]; then
+            echo -e "${YELLOW}[+] PATH'e $path ekleniyor...${NC}"
+            echo "export PATH=\"\$PATH:$path\"" >> "$HOME/.bashrc"
+            echo "export PATH=\"\$PATH:$path\"" >> "$HOME/.zshrc"
+            export PATH="$PATH:$path"
+        fi
+    done
+    
+    echo -e "${YELLOW}[!] PATH değişikliklerinin etkili olması için yeni bir terminal açın veya:${NC}"
+    echo -e "${YELLOW}[!] source ~/.bashrc  veya  source ~/.zshrc komutunu çalıştırın${NC}"
+}
+
+# Versiyon karşılaştırma fonksiyonu
+version_compare() {
+    local ver1=$(echo "$1" | sed 's/[^0-9.]//g')
+    local ver2=$(echo "$2" | sed 's/[^0-9.]//g')
+    
+    if [ "$ver1" = "$ver2" ]; then
+        return 0
     fi
-    if [[ ":$PATH:" != *":$HOME/go/bin:"* ]]; then
-        echo "export PATH=\"\$PATH:$HOME/go/bin\"" >> "$HOME/.bashrc"
-        echo "export PATH=\"\$PATH:$HOME/go/bin\"" >> "$HOME/.zshrc"
-        export PATH="$PATH:$HOME/go/bin"
-    fi
+    
+    local IFS=.
+    local i ver1=($ver1) ver2=($ver2)
+    
+    for ((i=${#ver1[@]}; i<${#ver2[@]}; i++)); do
+        ver1[i]=0
+    done
+    
+    for ((i=0; i<${#ver1[@]}; i++)); do
+        if [[ -z ${ver2[i]} ]]; then
+            ver2[i]=0
+        fi
+        if ((10#${ver1[i]} > 10#${ver2[i]})); then
+            return 1
+        fi
+        if ((10#${ver1[i]} < 10#${ver2[i]})); then
+            return 2
+        fi
+    done
+    return 0
 }
 
 # Go kurulumu (en yeni sürüm)
 install_go() {
-    if ! command -v go &> /dev/null || [[ $(go version | awk '{print $3}' | sed 's/go//') < "1.21" ]]; then
-        echo -e "${BLUE}[*] Go 1.21+ kurulumu...${NC}"
-        sudo rm -rf /usr/local/go
-        
-        # Go sürümünü güvenli şekilde al
-        latest_go=$(curl -s https://go.dev/VERSION?m=text | head -n 1 | tr -d '\n')
-        if [[ -z "$latest_go" ]]; then
-            latest_go="go1.21.0" # Fallback sürüm
+    local required_version="1.21"
+    
+    if command -v go &> /dev/null; then
+        local current_version=$(go version | awk '{print $3}' | sed 's/go//')
+        version_compare "$current_version" "$required_version"
+        if [ $? -ge 1 ]; then
+            echo -e "${YELLOW}[+] Go zaten yüklü: $(go version)${NC}"
+            return 0
         fi
-        
-        echo -e "${YELLOW}[*] $latest_go indiriliyor...${NC}"
-        if ! wget "https://dl.google.com/go/${latest_go}.linux-amd64.tar.gz" -O /tmp/go.tar.gz; then
-            echo -e "${RED}[!] Go indirme başarısız, alternatif URL deniyor...${NC}"
-            wget "https://go.dev/dl/${latest_go}.linux-amd64.tar.gz" -O /tmp/go.tar.gz || {
-                echo -e "${RED}[!] Go indirme başarısız oldu!${NC}"
-                return 1
-            }
-        fi
-
-        sudo tar -C /usr/local -xzf /tmp/go.tar.gz
-        echo "export PATH=\$PATH:/usr/local/go/bin" >> "$HOME/.bashrc"
-        echo "export PATH=\$PATH:/usr/local/go/bin" >> "$HOME/.zshrc"
-        export PATH=$PATH:/usr/local/go/bin
-        echo -e "${GREEN}[+] Go $latest_go kuruldu${NC}"
-        
-        # Go sürümünü doğrula
-        if ! command -v go &> /dev/null; then
-            echo -e "${RED}[!] Go kurulumu doğrulanamadı!${NC}"
-            return 1
-        fi
-    else
-        echo -e "${YELLOW}[+] Go zaten yüklü: $(go version)${NC}"
     fi
+    
+    echo -e "${BLUE}[*] Go $required_version+ kurulumu...${NC}"
+    sudo rm -rf /usr/local/go
+    
+    # Go sürümünü güvenli şekilde al
+    local latest_go=$(curl -s https://go.dev/VERSION?m=text | head -n 1 | tr -d '\n')
+    if [[ -z "$latest_go" ]]; then
+        latest_go="go1.21.0" # Fallback sürüm
+    fi
+    
+    echo -e "${YELLOW}[*] $latest_go indiriliyor...${NC}"
+    if ! wget "https://dl.google.com/go/${latest_go}.linux-amd64.tar.gz" -O /tmp/go.tar.gz; then
+        echo -e "${RED}[!] Go indirme başarısız, alternatif URL deniyor...${NC}"
+        wget "https://go.dev/dl/${latest_go}.linux-amd64.tar.gz" -O /tmp/go.tar.gz || {
+            echo -e "${RED}[!] Go indirme başarısız oldu!${NC}"
+            return 1
+        }
+    fi
+
+    sudo tar -C /usr/local -xzf /tmp/go.tar.gz
+    rm -f /tmp/go.tar.gz
+    
+    # Go sürümünü doğrula
+    if ! /usr/local/go/bin/go version &>/dev/null; then
+        echo -e "${RED}[!] Go kurulumu doğrulanamadı!${NC}"
+        return 1
+    fi
+    
+    echo -e "${GREEN}[+] Go $latest_go kuruldu${NC}"
 }
 
 # Python kurulumu
@@ -97,7 +142,14 @@ install_go_tool() {
     if ! command -v "$tool" &> /dev/null; then
         echo -e "${BLUE}[*] $tool kurulumu...${NC}"
         GO111MODULE=on go install "$pkg@latest"
-        echo -e "${GREEN}[+] $tool kuruldu${NC}"
+        
+        # Kurulumu doğrula
+        if command -v "$tool" &> /dev/null; then
+            echo -e "${GREEN}[+] $tool kuruldu ($($tool -version 2>/dev/null || $tool --version 2>/dev/null || echo 'sürüm bilgisi yok'))${NC}"
+        else
+            echo -e "${RED}[-] $tool kurulumu başarısız oldu!${NC}"
+            return 1
+        fi
     else
         echo -e "${YELLOW}[+] $tool zaten yüklü ($($tool -version 2>/dev/null || $tool --version 2>/dev/null || echo 'sürüm bilgisi yok'))${NC}"
     fi
@@ -110,11 +162,10 @@ install_system_deps() {
     # Önce GPG sorununu çöz
     fix_gpg
     
-    # Paket listesini güncelle
+    # Paket listesini güncelle (sadece bir kez)
     if ! sudo apt update; then
         echo -e "${RED}[!] apt update başarısız oldu, GPG anahtarları sorunu olabilir${NC}"
-        fix_gpg
-        sudo apt update
+        return 1
     fi
     
     sudo apt install -y git wget build-essential libssl-dev zlib1g-dev jq
@@ -126,7 +177,10 @@ install_system_deps() {
 # Ana kurulum fonksiyonu
 install_dependencies() {
     # Sistem bağımlılıkları
-    install_system_deps
+    if ! install_system_deps; then
+        echo -e "${RED}[!] Sistem bağımlılıkları kurulumu başarısız oldu!${NC}"
+        exit 1
+    fi
 
     # Go kurulum
     if ! install_go; then
@@ -141,7 +195,7 @@ install_dependencies() {
     # Go araçları
     declare -A go_tools=(
         ["subfinder"]="github.com/projectdiscovery/subfinder/v2/cmd/subfinder"
-        ["amass"]="github.com/owasp-amass/amass/v3/..."
+        ["amass"]="github.com/owasp-amass/amass/v3/cmd/amass"
         ["dnsx"]="github.com/projectdiscovery/dnsx/cmd/dnsx"
         ["httpx"]="github.com/projectdiscovery/httpx/cmd/httpx"
         ["gau"]="github.com/lc/gau/v2/cmd/gau"
@@ -152,18 +206,25 @@ install_dependencies() {
     )
 
     for tool in "${!go_tools[@]}"; do
-        install_go_tool "$tool" "${go_tools[$tool]}"
+        if ! install_go_tool "$tool" "${go_tools[$tool]}"; then
+            echo -e "${YELLOW}[!] Uyarı: $tool kurulumu başarısız oldu, bazı özellikler çalışmayabilir${NC}"
+        fi
     done
 
     # Python araçları
     echo -e "${BLUE}[*] dirsearch kurulumu...${NC}"
-    pip3 install --user dirsearch
+    pip3 install --user dirsearch || {
+        echo -e "${RED}[-] dirsearch kurulumu başarısız oldu!${NC}"
+    }
 
     # GF patternleri
     if [ ! -d "$HOME/.gf" ]; then
         echo -e "${BLUE}[*] GF patternleri indiriliyor...${NC}"
         mkdir -p "$HOME/.gf"
-        git clone https://github.com/tomnomnom/gf "$TOOLS_DIR/gf"
+        git clone https://github.com/tomnomnom/gf "$TOOLS_DIR/gf" || {
+            echo -e "${RED}[-] GF pattern indirme başarısız oldu!${NC}"
+            return
+        }
         cp -r "$TOOLS_DIR/gf/examples" "$HOME/.gf/"
         echo 'source $HOME/.gf/gf-completion.bash' >> ~/.bashrc
     fi
@@ -185,7 +246,9 @@ WORDLIST="${WORDLIST:-$HOME/SecLists/Discovery/Web-Content/raft-medium-words.txt
 # Eğer SecLists yoksa kur
 if [ ! -d "$HOME/SecLists" ]; then
     echo -e "${YELLOW}[*] SecLists indiriliyor...${NC}"
-    git clone --depth 1 https://github.com/danielmiessler/SecLists.git "$HOME/SecLists"
+    git clone --depth 1 https://github.com/danielmiessler/SecLists.git "$HOME/SecLists" || {
+        echo -e "${RED}[-] SecLists indirme başarısız oldu!${NC}"
+    }
 fi
 
 # JSON config'ini oku
@@ -249,7 +312,7 @@ check_site_availability() {
     fi
     
     # 2. HTTP/HTTPS erişim kontrolü (curl ile)
-    http_code=$(curl --max-time 10 -k -s -I -o /dev/null -w "%{http_code}" "$target" 2>/dev/null || true)
+    local http_code=$(curl --max-time 10 -k -s -I -o /dev/null -w "%{http_code}" "$target" 2>/dev/null || true)
     
     if [[ "$http_code" =~ ^[23] ]]; then
         echo -e "${GREEN}[+] HTTP erişimi başarılı: $target (Status: $http_code)${NC}"
