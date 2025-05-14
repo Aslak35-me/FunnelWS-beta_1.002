@@ -5,35 +5,43 @@ import time
 import json
 import threading
 import sys
-import os
 import colorama
+import platform
 from concurrent.futures import ThreadPoolExecutor
 from urllib.parse import urlparse, urlsplit, urlunsplit, parse_qs, urlencode
 from colorama import init, Fore, Style
 
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+# Proje kök dizinini belirle
+BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 
-base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
-setting_path = os.path.join(base_dir, 'config', 'setting.json')
+# setting.json dosya yolu
+SETTING_PATH = os.path.join(BASE_DIR, 'config', 'setting.json')
 
-with open(setting_path, 'r', encoding='utf-8') as f:
-    setting = json.load(f)
+# setting.json dosyasını kontrol et ve oku
+if not os.path.exists(SETTING_PATH):
+    print(f"{Fore.RED}[ERROR] setting.json file not found at: {SETTING_PATH}{Style.RESET_ALL}")
+    print(f"{Fore.YELLOW}Please make sure the file exists in the config directory{Style.RESET_ALL}")
+    exit(1)
 
+try:
+    with open(SETTING_PATH, 'r', encoding='utf-8') as f:
+        setting = json.load(f)
+except Exception as e:
+    print(f"{Fore.RED}[ERROR] Failed to load setting.json: {str(e)}{Style.RESET_ALL}")
+    exit(1)
+
+# Ayarlardan gerekli değerleri al
 TARGET_FILE_PATH = setting.get("TARGET_FILE_PATH")
 TARGET = setting.get("TARGET")
-TARGET_FILE_CHECK = setting.get("TARGET_FILE_CHECK")
+TARGET_FILE_CHECK = setting.get("TARGET_FILE_CHECK", "off").lower()
+request_timeout = setting.get('request_timeout', 10)
 
 # Proje kök dizinini Python'un modül arama yoluna ekle
-PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-if PROJECT_ROOT not in sys.path:
-    sys.path.append(PROJECT_ROOT)
+if BASE_DIR not in sys.path:
+    sys.path.append(BASE_DIR)
 
 init(autoreset=True)
-
-# setting.json dosyasını oku
-with open(os.path.join(os.path.dirname(__file__), 'config', 'setting.json'), 'r', encoding='utf-8') as f:
-    setting = json.load(f)
-
+    
 # Global variables
 vulnerable = []
 not_vulnerable = []
@@ -42,8 +50,7 @@ scan_stats = {
     'vulnerable': 0,
     'start_time': time.time(),
     'errors': 0
-}
-request_timeout = setting.get('request_timeout', 20)
+    }
 
 # Directory and file paths
 SCAN_RESULTS_DIR = "scan_results"
