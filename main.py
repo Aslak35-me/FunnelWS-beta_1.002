@@ -530,7 +530,7 @@ if __name__ == "__main__":
 
     parser.add_argument("--banner", action="store_true", help="Banner göster")
     parser.add_argument("--version", "--v", action="store_true", help="Sürüm bilgisi")
-    parser.add_argument("--help", "--h", "-h", "-help","---h","---help","help", action="store_true", help="Yardım menüsü")
+    parser.add_argument("--help", "--h", "-h", "-help", "---h", "---help", "help", action="store_true", help="Yardım menüsü")
     parser.add_argument("--tor", action="store_true", help="Tor üzerinden tarama")
     parser.add_argument("--user-agent", "--random-agent", action="store_true", help="user agent ile taramalar yapar")
 
