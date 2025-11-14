@@ -3,31 +3,31 @@ FunnelWS beta_1.002
 
 Task manager:
 
-[] run edilebilicek hale getir.
+[  ] run edilebilicek hale getir.
 
-[] Template mantığı getir.
+[  ] Template mantığı getir.
 
-[] İçerisine tool miktarını arttır.
+[  ] İçerisine tool miktarını arttır.
 
-[] Fingerprint alma işini hallet.
+[  ] Fingerprint alma işini hallet.
 
 Modules:
 
-[] Basic scanner
+[  ] Basic scanner
 
-[] Fingerprint scanner
+[  ] Fingerprint scanner
 
-[] 
+[  ] 
 
 Goal:
 
-[] 1k templates
+[  ] 1k templates
 
-[] 1k PoC
+[  ] 1k PoC
 
-[] All Wordpress exploits
+[  ] All Wordpress exploits
 
-[] 1 Zeroday
+[  ] 1 Zeroday
 
 Hedeflenen Tarih: 2026.01.01
 
