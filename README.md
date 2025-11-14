@@ -2,6 +2,7 @@
 FunnelWS beta_1.002
 
 Task manager:
+
 [] run edilebilicek hale getir.
 
 [] Template mantığı getir.
@@ -11,6 +12,7 @@ Task manager:
 [] Fingerprint alma işini hallet.
 
 Modules:
+
 [] Basic scanner
 
 [] Fingerprint scanner
@@ -18,6 +20,7 @@ Modules:
 [] 
 
 Goal:
+
 [] 1k templates
 
 [] 1k PoC
